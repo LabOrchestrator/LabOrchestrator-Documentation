@@ -1,7 +1,7 @@
 \pagebreak
 
 # Tools
-The %title% application uses different tools that may be explained before the installation of the application. This chapter will give you an introduction into the tools that are used and required in this project, as well as an explanation about Kubernetes that is needed to understand how the %title% application is working on the inside.
+The %project_name% application uses different tools that may be explained before the installation of the application. This chapter will give you an introduction into the tools that are used and required in this project, as well as an explanation about Kubernetes that is needed to understand how the %project_name% application is working on the inside.
 
 
 ## Make
@@ -20,8 +20,6 @@ There is a make command to generate the docs: `make docs`.
 - `$ make docs`
 
 
-## Running Kubernetes
-
 ## nohup
 If a terminal is closed (for example if you logout), a HUP signal is send to all programs that are running in the terminal. [@signals]
 `nohup` is a command that executes a program, with intercepting the HUP signal. That results into the program doesn't exit when you logout.
@@ -33,4 +31,21 @@ The output of the program is redirected into the file `nohup.out`
 `kubectl` is a command line tool that lets you control Kubernetes clusters.
 
 ## Kubernetes
+Kubernetes is an open source container orchestration platform. With Kubernetes it's possible to automate deployments and easily scale containers. It has many features that make it useful for the project. Some of them are explained here. [@kubernetesredhat]
+
+### Pods
+A pod is a group of one or more containers that are deployed to a single node. The containers in a pod share an ip address and a hostname.
+
+### Services
+Services allows that service requests are automatically redirected to the correct pod.
+
+### Control Plane
+The control plane controls the Kubernetes cluster. It also has an API that can be used with kubectl or REST calls to deploy stuff. [@kubernetesredhat2]
+
+### Deployment
+Deployments define the applications life cycle, for example which images to use, the number of pods and how to update them. [@kubernetesredhatdeploy]
+
+### Operators
+[@kubernetesredhatoperator]
+
 ### Namespaces

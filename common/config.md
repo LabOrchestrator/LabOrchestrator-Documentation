@@ -1,6 +1,6 @@
 ---
 # Infos
-title: 'Lernmodul Controller'
+title: 'Lab Orchestrator'
 author:
 - Marco Schlicht
 - Mohamed El Jemai
@@ -33,5 +33,7 @@ citecolor: black
 endnote: false
 
 # Variables
-project_name: 'Lernmodul Controler'
+#project_name: 'Lernmodul Controler'
+#project_name: 'Lab Control Plane (LCP)'
+project_name: 'Lab Orchestrator'
 ...
