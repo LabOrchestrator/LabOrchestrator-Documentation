@@ -1,11 +1,8 @@
 \pagebreak
 
-# Tools
+# Basics
 The %project_name% application uses different tools that may be explained before the installation of the application. This chapter will give you an introduction into the tools that are used and required in this project, as well as an explanation about Kubernetes that is needed to understand how the %project_name% application is working on the inside.
 
-
-## Make
-Make is used to resolve dependencies during a build process. In this project make is used to have some shortcuts for complex build commands. For example there is a make command to generate the documentation: `make docs`.
 
 ## Generating The Documentation
 <!-- TODO: This should be added to the readme aswell -->
@@ -15,12 +12,16 @@ For the replacement of variables there is a lua script installed, so you need to
 
 There is a make command to generate the docs: `make docs`.
 
-### Commands:
+### Commands
 - `$ sudo apt install pandoc pandoc-citeproc make`
 - `$ make docs`
 
 
 ## Terminal Tools
+
+### Make
+Make is used to resolve dependencies during a build process. In this project make is used to have some shortcuts for complex build commands. For example there is a make command to generate the documentation: `make docs`.
+
 ### nohup
 If a terminal is closed (for example if you logout), a HUP signal is send to all programs that are running in the terminal. [@signals]
 `nohup` is a command that executes a program, with intercepting the HUP signal. That results into the program doesn't exit when you logout.
@@ -94,7 +95,7 @@ Ingresses are made to expose http and https and no other ports. So exposing othe
 
 Ingresses allows to match specific hosts only and you can include multiple services in an ingress by separating them with a path in the URL. [@kubernetesingress]
 
-![How Ingress interacts with Services and Pods [@kubernetesingress]](./tools/ingress.png)
+![How Ingress interacts with Services and Pods [@kubernetesingress]](./basics/ingress.png)
 
 Example:
 
@@ -159,7 +160,16 @@ Both tools are used to get started with Kubernetes, to try out stuff and for dai
 
 In this project we use minikube for development.
 
-### KubeVirt
-KubeVirt enables Kubernetes to use virtual machines instead of containers.
+### Krew, KubeVirt and Virtctl
+Krew is a package manager for kubectl plugins. KubeVirt enables Kubernetes to use virtual machines instead of containers. And Virtctl is a kubectl plugin to use KubeVirt with kubectl.
+
+There is a tool called Containerized Data Importer (CDI) that is designed to import Virtual Machine images for use with KubeVirt. [@kubevirtcdi]
+
+
+## Web-Terminal Tools
+There are several tools available to get access to a terminal over a website. Gotty, wetty and ttyd are examples of this. These tools start a terminal session and then allows a user to access this session over a website.
+
+## Web-VNC Tools
+To connect to a VNC session of a virtualised system, there are also several tools. To name two of them, there are Apache Guacamole and noVNC. These tools start a VNC session and then allows a user to access this session over a website.
 
 \vfill

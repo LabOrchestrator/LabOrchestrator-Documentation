@@ -1,6 +1,8 @@
 doc_files=common/config.md common/pre.md \
-		  tools/tools.md \
+		  introduction/introduction.md \
+		  basics/basics.md \
 		  installation/installation.md \
+		  prototype/prototype.md \
 		  common/post.md
 
 pandoc_filters=--filter pandoc-citeproc --lua-filter=common/meta-vars.lua
