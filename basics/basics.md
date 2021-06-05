@@ -163,12 +163,12 @@ Both tools are used to get started with Kubernetes, to try out stuff and for dai
 
 In this project we use minikube for development.
 
-### Helm, Krew, KubeVirt, Virtctl and Rancher
+### Helm, Krew, KubeVirt Virtctl and Rancher
 **Helm** is a package manager for Kubernetes. **Krew** is a package manager for kubectl plugins. **KubeVirt** enables Kubernetes to use virtual machines instead of containers. And **Virtctl** is a kubectl plugin to use KubeVirt with kubectl. Virtctl adds some commands for example to get access to a VMs console.
 
 There is a tool called Containerized Data Importer (CDI) that is designed to import Virtual Machine images for use with KubeVirt. [@kubevirtcdi]
 
-Rancher is an Web UI for Kubernetes, that can display all running resources and allows an admin to change them and create new.
+Rancher is an Web UI for Kubernetes, that can display all running resources and allows an admin to change them and create new. Maybe this is worth a look.
 
 ## Web-Terminal Tools
 There are several tools available to get access to a terminal over a website. Gotty, wetty and ttyd are examples of this. These tools start a terminal session and then allows a user to access this session over a website.

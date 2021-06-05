@@ -24,7 +24,7 @@ It is sufficient to only run one cluster with kvm2 driver, because this can exec
 ### Kubernetes Productive Installation
 <!-- TODO -->
 
-### Helm, Krew, KubeVirt, Virtctl and Rancher Installation
+### Helm, Krew, KubeVirt and Virtctl Installation
 Start minikube with kvm2 driver: `minikube start --driver kvm2`.
 
 Install Helm using [this guide](https://helm.sh/docs/intro/install/)^[https://helm.sh/docs/intro/install/].
