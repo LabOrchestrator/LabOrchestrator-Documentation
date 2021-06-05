@@ -6,15 +6,18 @@ The %project_name% application uses different tools that may be explained before
 
 ## Generating The Documentation
 <!-- TODO: This should be added to the readme aswell -->
-The documentation is written in markdown and converted to a pdf using pandoc. To generate the documentation pandoc and latex are used. Install `pandoc`, `pandoc-citeproc` and a latex environment. [@markdownandpandoc]
+The documentation is written in markdown and converted to a pdf using pandoc. To generate the documentation pandoc and latex are used. Install `pandoc`, `pandoc-citeproc` and a latex environment: [@markdownandpandoc]
+
+```bash
+$ sudo apt install pandoc pandoc-citeproc make
+$ make docs
+```
 
 For the replacement of variables there is a lua script installed, so you need to install lua too. [@luavariablescript]
 
-There is a make command to generate the docs: `make docs`.
+After that, you need to install the pandoc-include-code filter. For this, you need to download the latest release from here: [github.com/owickstrom/pandoc-include-code/releases](https://github.com/owickstrom/pandoc-include-code/releases)^[https://github.com/owickstrom/pandoc-include-code/releases]. Then extract the tar file and install it with the command `install pandoc-include-code ~/.local/bin`. Also make sure `~/.local/bin` is included in `$PATH`.
 
-### Commands
-- `$ sudo apt install pandoc pandoc-citeproc make`
-- `$ make docs`
+There is a make command to generate the docs: `make docs`.
 
 
 ## Terminal Tools
@@ -160,11 +163,12 @@ Both tools are used to get started with Kubernetes, to try out stuff and for dai
 
 In this project we use minikube for development.
 
-### Krew, KubeVirt and Virtctl
-Krew is a package manager for kubectl plugins. KubeVirt enables Kubernetes to use virtual machines instead of containers. And Virtctl is a kubectl plugin to use KubeVirt with kubectl.
+### Helm, Krew, KubeVirt, Virtctl and Rancher
+**Helm** is a package manager for Kubernetes. **Krew** is a package manager for kubectl plugins. **KubeVirt** enables Kubernetes to use virtual machines instead of containers. And **Virtctl** is a kubectl plugin to use KubeVirt with kubectl. Virtctl adds some commands for example to get access to a VMs console.
 
 There is a tool called Containerized Data Importer (CDI) that is designed to import Virtual Machine images for use with KubeVirt. [@kubevirtcdi]
 
+Rancher is an Web UI for Kubernetes, that can display all running resources and allows an admin to change them and create new.
 
 ## Web-Terminal Tools
 There are several tools available to get access to a terminal over a website. Gotty, wetty and ttyd are examples of this. These tools start a terminal session and then allows a user to access this session over a website.

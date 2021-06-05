@@ -5,7 +5,7 @@ doc_files=common/config.md common/pre.md \
 		  prototype/prototype.md \
 		  common/post.md
 
-pandoc_filters=--filter pandoc-citeproc --lua-filter=common/meta-vars.lua
+pandoc_filters=--filter pandoc-citeproc --lua-filter=common/meta-vars.lua --filter pandoc-include-code
 pandoc_params=--pdf-engine=lualatex ${pandoc_filters}
 
 docs:
