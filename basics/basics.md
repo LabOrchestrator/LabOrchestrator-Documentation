@@ -15,7 +15,7 @@ $ make docs
 
 For the replacement of variables there is a lua script installed, so you need to install lua too. [@luavariablescript]
 
-After that, you need to install the pandoc-include-code filter. For this, you need to download the latest release from here: [github.com/owickstrom/pandoc-include-code/releases](https://github.com/owickstrom/pandoc-include-code/releases)^[https://github.com/owickstrom/pandoc-include-code/releases]. Then extract the tar file and install it with the command `install pandoc-include-code ~/.local/bin`. Also make sure `~/.local/bin` is included in `$PATH`.
+After that, you need to install the pandoc-include-code and pandoc-crossref filters. For this, you need to download the latest release from here: [github.com/owickstrom/pandoc-include-code/releases](https://github.com/owickstrom/pandoc-include-code/releases)^[https://github.com/owickstrom/pandoc-include-code/releases] and here: [github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b](https://github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b)^[https://github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b]. Then extract the tar file and install it with the commands `install pandoc-include-code ~/.local/bin` and `install pandoc-crossref ~/.local/bin`. Also make sure `~/.local/bin` is included in `$PATH`. Optionally if your pandoc version is not the correct one, you need to build these tools by yourself.
 
 There is a make command to generate the docs: `make docs`.
 
