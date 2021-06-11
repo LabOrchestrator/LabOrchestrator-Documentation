@@ -157,7 +157,7 @@ This examples creates a VMI and attaches a PVC with the name `mypvc` as a lun di
 #### Container Disks
 `containerDisk` is a volume that references a docker image. The disks are pulled from the container registry and reside on the local node. It is an ephemeral storage device and can be used by multiple VMIs. This makes them an ideal tool for users who want to replicate a large number of VMs that do not require persistent data. They are often used in `VirtualMachineInstanceReplicaSet`. They are not a good solution if you need persistent root disks across VM restarts. Container disks are file based and therefore cannot be attached as a lun device. [@kubevirtdocdisks]
 
-To use container disks you need to create a docker image which contains the VMI disk. The disk must be placed into the `/disk` directory of the container and must be readable for the user with the UID 107 (qemu). The format of the VMI disk must be raw or qcow2. The base image of the docker image should be based on `scratch` and no other content except the image is required. [@kubevirtdocdisks]
+To use container disks you need to create a docker image which contains the VMI disk. The disk must be placed into the `/disk` directory of the container and must be readable for the user with the UID 107 (qemu). The format of the VMI disk must be raw or qcow2. The base image of the docker image should be based on the docker `scratch` base image and no other content except the image is required. [@kubevirtdocdisks]
 
 Dockerfile example with local qcow2 image: [@kubevirtdocdisks]
 
@@ -186,6 +186,40 @@ The difference between `ephemeral` and `emptyDisk` is, that `ephemeral` disks ar
 
 #### Remaining Volumes
 `hostDisk`, `configMap`, `secrets` and the other volumes are explained in the [KubeVirt Disks and Volumes Documentation](https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/)^[https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/].
+
+#### Examples
+
+~~~{#lst:mypython .yaml .numberLines caption="Example VM with Volumes"}
+apiVersion: kubevirt.io/v1alpha1
+kind: VirtualMachine
+metadata:
+  name: myvm
+spec:
+  terminationGracePeriodSeconds: 5
+  domain:
+    resources:
+      requests:
+        memory: 64M
+    devices:
+      disks:
+      - name: registrydisk
+        volumeName: registryvolume
+        disk:
+          bus: virtio
+      - name: cloudinitdisk
+        volumeName: cloudinitvolume
+        disk:
+          bus: virtio
+  volumes:
+    - name: registryvolume
+      registryDisk:
+        image: kubevirt/cirros-registry-disk-demo:devel
+    - name: cloudinitvolume
+      cloudInitNoCloud:
+        userData: |
+          ssh-authorized-keys:
+            - ssh-rsa AAAAB3NzaK8L93bWxnyp test@test.com
+~~~
 
 ### KubeVirt Interfaces and Networks
 There are two parts needed to connect a VM to a network. First there is the interface that is a virtual network interface of a virtual machine and second there is the network which connects VMs to logical or physical devices.
