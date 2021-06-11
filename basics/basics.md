@@ -61,8 +61,7 @@ Services allows that service requests are automatically redirected to the correc
 
 Services also allow to add multiple ports to one service. When using multiple ports, you must give all of them a name. For example you can add a port for http and another port for https.
 
-Example of a Service:
-```
+~~~{#lst:exmplsrv .yaml .numberLines caption="Example of a Service"}
 apiVersion: v1
 kind: Service
 metadata:
@@ -74,7 +73,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 9376
-```
+~~~
 
 This service has the name `my-service` and listens on the port 80. It forwards the requests to the pods with the selector `app=MyApp` on the port 9376.
 
@@ -82,7 +81,7 @@ There is also the ability to publish services. To make use of this, the `Service
 
 You should create a service before its corresponding deployments or pods. When Kubernetes starts a container, it provides environment variables pointing to all the services which were running when the container was started. These environment variables has the naming schema `servicename_SERVICE_HOST` and `servicename_SERVICE_PORT`, so for example if your service name is foo: [@kubernetesbestprac]
 
-```
+```bash
 FOO_SERVICE_HOST=<the host the Service is running on>
 FOO_SERVICE_PORT=<the port the Service is running on>
 ```
@@ -100,9 +99,7 @@ Ingresses allows to match specific hosts only and you can include multiple servi
 
 ![How Ingress interacts with Services and Pods [@kubernetesingress]](./basics/ingress.png)
 
-Example:
-
-```
+~~~{#lst:exmplingress .yaml .numberLines caption="Example of an Ingress"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -126,7 +123,7 @@ spec:
             name: service2
             port:
               number: 8080
-```
+~~~
 
 To use ingresses you need to have an ingress controller.
 

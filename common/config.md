@@ -45,4 +45,9 @@ include-before: |
     \pagebreak
     \pagenumbering{arabic}
 
+codeBlockCaptions: false
+
+header-includes:
+ - '\AtBeginDocument{\floatplacement{codelisting}{H}}' # this enforces the position of listings
+
 ...

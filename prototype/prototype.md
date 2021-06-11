@@ -49,10 +49,11 @@ After starting the VM you can expose its ssh port with this command: `kubectl vi
 
 VMIs can be paused and unpaused with the commands `kubectl virt pause vm testvm` or `kubectl virt pause vmi testvm` and the commands `kubectl virt unpause vm testvm` or `kubectl virt unpause vmi testvm`. This freezes the process of the VMI, that means that the VMI has no longer access to CPU and I/O but the memory will stay allocated. [@kubevirtdoclife]
 
-Example VM (`prototype/vm.yaml`): [@kubevirtlab1]
 
-```{include=prototype/vm.yaml}
-```
+~~~{#lst:mypython .yaml .numberLines caption="Example VM (prototype/vm.yaml)" include=prototype/vm.yaml}
+~~~
+
+The source of the example can be found in [@kubevirtlab1].
 
 ### KubeVirt Run Strategies
 
@@ -69,9 +70,7 @@ VirtualMachines have different so called run strategies. If a VMI crashes it res
 
 You can use presets to define a set of specs with different values and give them labels and then customise VMIs with them. This abstracts some of the specs of VMIs and make it easily customisable to change the specs of a VMI. [@kubevirtdocpreset]
 
-Example `VirtualMachineInstancePreset`: [@kubevirtdocpreset]
-
-```
+~~~{#lst:exmplvmipreset .yaml .numberLines caption="Example VirtualMachineInstancePreset"}
 apiVersion: kubevirt.io/v1alpha3
 kind: VirtualMachineInstancePreset
 metadata:
@@ -84,11 +83,10 @@ spec:
     resources:
       requests:
         memory: 64M
-```
+~~~
 
-Example VMI, that matches the correct labels: [@kubevirtdocpreset]
 
-```
+~~~{#lst:exmplvmilabel .yaml .numberLines caption="Example VMI, that matches the correct labels"}
 apiVersion: kubevirt.io/v1alpha3
 kind: VirtualMachineInstance
 version: v1
@@ -96,9 +94,9 @@ metadata:
   name: myvmi
   labels:
     kubevirt.io/size: small
-```
+~~~
 
-The example shows a preset, which applies 64M of memory to every VMI with the label `kubevirt.io/size: small`. [@kubevirtdocpreset]
+The source of the examples can be found in [@kubevirtdocpreset]. The example shows a preset, which applies 64M of memory to every VMI with the label `kubevirt.io/size: small`. [@kubevirtdocpreset]
 
 When a preset and a VMI define the same specs but with different values there is a collision. Collisions are handled in the way that the VMI settings override the presets settings. If there are collisions between two presets that are applied to the same VMI an error occurs. [@kubevirtdocpreset]
 
@@ -127,9 +125,8 @@ Kubernetes provides some resources for providing persistent storage. The first i
 
 A `PersistentVolumeClaim` (PVC) is the third resource provided by Kubernetes. It is a request for storage by a user. In KubeVirt it is used, when the VMIs disk needs to persist after the VM terminates. This makes the VM data persistent between restarts. `PersistentVolumes` and `StorageClasses` can be used to customize the Storage that can be provided to PVCs. [@kubevirtdocdisks]
 
-Example of VMI with PVC: [@kubevirtdocdisks]
 
-```
+~~~{#lst:exmplvmipvc .yaml .numberLines caption="Example of VMI with PVC"}
 metadata:
   name: testvmi-pvc
 apiVersion: kubevirt.io/v1alpha3
@@ -147,9 +144,9 @@ spec:
     - name: mypvcdisk
       persistentVolumeClaim:
         claimName: mypvc
-```
+~~~
 
-This examples creates a VMI and attaches a PVC with the name `mypvc` as a lun disk.
+The source of the example can be found in [@kubevirtdocdisks]. This examples creates a VMI and attaches a PVC with the name `mypvc` as a lun disk.
 
 #### Data Volumes
 `dataVolume` are part of the Containerized Data Importer (CDI) which need to be installed separately. A data volume is used to automate importing VM disks onto PVCs. Without a `DataVolume`, users have to prepare a PVC with a disk image before assigning it to a VM. DataVolumes are defined in the VM spec by adding the attribute list `dataVolumeTemplates`. The specs of a data volume contain a `source` and `pvc` attribute. `source` describes where to find the disk image. `pvc` describes which specs the PVC that is created should have. An example can be found [here](https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/#datavolume-vm-behavior)^[https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/#datavolume-vm-behavior]. When the VM is deleted, the PVC ist deleted as well. When a VM manifest is posted to the cluster (for example with a yaml config), the PVC is created directly before the VM is even started. That may be used for performance improvements when starting a VM. It is possible to attach a data volume while creating a VMI, but then the data volume is not tied to the life-cycle of the VMI. [@kubevirtdocdisks]
@@ -159,23 +156,17 @@ This examples creates a VMI and attaches a PVC with the name `mypvc` as a lun di
 
 To use container disks you need to create a docker image which contains the VMI disk. The disk must be placed into the `/disk` directory of the container and must be readable for the user with the UID 107 (qemu). The format of the VMI disk must be raw or qcow2. The base image of the docker image should be based on the docker `scratch` base image and no other content except the image is required. [@kubevirtdocdisks]
 
-Dockerfile example with local qcow2 image: [@kubevirtdocdisks]
-
-```
+~~~{#lst:exmpldocker1 .dockerfile .numberLines caption="Dockerfile example with local qcow2 image"}
 FROM scratch
 ADD --chown=107:107 fedora25.qcow2 /disk/
-END
-```
+~~~
 
-Dockerfile example with remote qcow2 image: [@kubevirtdocdisks]
-
-```
+~~~{#lst:exmpldocker2 .dockerfile .numberLines caption="Dockerfile example with remote qcow2 image"}
 FROM scratch
 ADD --chown=107:107 https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 /disk/
-END
-```
+~~~
 
-The dockerfiles can then be build with `docker build -t example/example:latest .` and pushed to a remote docker container registry with `docker push example/example:latest`. [@kubevirtdocdisks]
+The source of the examples can be found in [@kubevirtdocdisks]. The dockerfiles can then be build with `docker build -t example/example:latest .` and pushed to a remote docker container registry with `docker push example/example:latest`. [@kubevirtdocdisks]
 
 #### Empty Disks and Ephemeral Disks
 `emptyDisk` is a temporary disk which shares the VMIs lifecycle. The disk lifes as long as the VM, so it will persist between reboots and will be deleted when the VM is deleted. You need to specify the `capacity`. [@kubevirtdocdisks]
@@ -189,7 +180,7 @@ The difference between `ephemeral` and `emptyDisk` is, that `ephemeral` disks ar
 
 #### Examples
 
-~~~{#lst:mypython .yaml .numberLines caption="Example VM with Volumes"}
+~~~{#lst:mypython .yaml .long .numberLines caption="Example VM with Volumes"}
 apiVersion: kubevirt.io/v1alpha1
 kind: VirtualMachine
 metadata:
@@ -230,9 +221,7 @@ Interfaces describe the properties of a virtual interface and are seen inside th
 
 You can read more about the types [here](https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/)^[https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/]
 
-Example network and interface:
-
-```
+~~~{#lst:exmplnet .yaml .numberLines caption="Example Network and Interface"}
 kind: VM
 spec:
   domain:
@@ -246,19 +235,19 @@ spec:
   networks:
   - name: default
     pod: {}
-```
+~~~
 
 The ports field can be used to limit the ports the VM listens to.
 
-If you would like to disable network connectivity, you can use the `autoattachPodInterface` field:
+If you would like to disable network connectivity, you can use the `autoattachPodInterface` field.
 
-```
+~~~{#lst:exmplaapi .yaml .numberLines caption="Example of autoattachPodInterface"}
 kind: VM
 spec:
   domain:
     devices:
       autoattachPodInterface: false
-```
+~~~
 
 ### KubeVirt Network Policy
 Maybe needed to separate userspaces or to connect all users machines.
