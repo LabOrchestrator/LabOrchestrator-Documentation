@@ -36,4 +36,13 @@ endnote: false
 #project_name: 'Lernmodul Controler'
 #project_name: 'Lab Control Plane (LCP)'
 project_name: 'Lab Orchestrator'
+
+include-before: |
+    \pagenumbering{gobble}
+    \maketitle
+    \pagebreak
+    \tableofcontents
+    \pagebreak
+    \pagenumbering{arabic}
+
 ...
