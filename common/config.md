@@ -7,7 +7,11 @@ author:
 date: \today
 tags: [markdown, tools]
 abstract: |
-  Explanation of tools that we are using.
+  This document is the project documentation and is intended, among other things, to describe and explain all aspects, such as tools and required knowledge, that are necessary to successfully complete the project.
+
+  The first chapter explains the motivation of the project and the goals we want to achive. There is also a division of the project into different project phases. In the second chapter the basics needed to understand this project are explained. There are different tools that are described and the key concepts of Kubernetes are explained. After that there are evaluations of which additional tools are required, for which further explanations are included. This contains a more detailed description of Kubernetes objects and KubeVirt, but also information about noVNC and ttyd, two tools which may be used to connect to the containers and VMs.
+
+  The project documentation accompanies the project and is continuously supplemented and expanded and should always reflect the current status of the project.
 lang: en-EN
 numbersections: true
 
@@ -45,9 +49,10 @@ include-before: |
     \pagebreak
     \pagenumbering{arabic}
 
-codeBlockCaptions: false
-
 header-includes:
- - '\AtBeginDocument{\floatplacement{codelisting}{H}}' # this enforces the position of listings
+    - '\AtBeginDocument{\floatplacement{codelisting}{H}}' # this enforces the position of listings
+    - '\usepackage{fvextra}' # break lines in listings
+    - '\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}' # break lines in listings
+
 
 ...

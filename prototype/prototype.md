@@ -180,38 +180,6 @@ The difference between `ephemeral` and `emptyDisk` is, that `ephemeral` disks ar
 
 #### Examples
 
-~~~{#lst:mypython .yaml .long .numberLines caption="Example VM with Volumes"}
-apiVersion: kubevirt.io/v1alpha1
-kind: VirtualMachine
-metadata:
-  name: myvm
-spec:
-  terminationGracePeriodSeconds: 5
-  domain:
-    resources:
-      requests:
-        memory: 64M
-    devices:
-      disks:
-      - name: registrydisk
-        volumeName: registryvolume
-        disk:
-          bus: virtio
-      - name: cloudinitdisk
-        volumeName: cloudinitvolume
-        disk:
-          bus: virtio
-  volumes:
-    - name: registryvolume
-      registryDisk:
-        image: kubevirt/cirros-registry-disk-demo:devel
-    - name: cloudinitvolume
-      cloudInitNoCloud:
-        userData: |
-          ssh-authorized-keys:
-            - ssh-rsa AAAAB3NzaK8L93bWxnyp test@test.com
-~~~
-
 ### KubeVirt Interfaces and Networks
 There are two parts needed to connect a VM to a network. First there is the interface that is a virtual network interface of a virtual machine and second there is the network which connects VMs to logical or physical devices.
 
@@ -250,8 +218,40 @@ spec:
 ~~~
 
 ### KubeVirt Network Policy
-Maybe needed to separate userspaces or to connect all users machines.
-https://kubevirt.io/user-guide/virtual_machines/networkpolicy/
+
+By default, all VMIs in a namespace share a network and are accessible from other VMIs. To isolate them, you can create NetworkPolicy objects. NetworkPolicy objects entirely control the network isolation in a namespace. Examples on how to deny all traffic, only allow traffic in the same namespace or only allow HTTP and HTTPS access can be found [here](https://kubevirt.io/user-guide/virtual_machines/networkpolicy/)^[https://kubevirt.io/user-guide/virtual_machines/networkpolicy/]. [@kubevirtnet]
+
+NetworkPolicy objects are included in Kubernetes and are used to separate networks of pods. But with KubeVirt installed, VMIs and pods are treated equally and NetworkPolicy objects can be used for VMIs too. We need to add NetworkPolicy objects to isolate the VMIs of different users, so that the users can't connect to the VMIs of other users. If we create a new namespace for every user, the default settings are sufficient, but creating NetworkPolicy objects gives us more flexibility, e.g. cross namespace connections or isolation of ports. [@k8net]
+
+**To use network policies you need to install a network plugin, that supports network policies. So make sure your cluster fulfills this condition.** [@k8net]
+
+Network policies are additive, so if you add two policies the union of them is chosen. If the egress policy or the ingress policy on a pod denies the traffic, the traffic will not be possible even though the network policy would allow it. [@k8net]
+
+How to create and use a NetworkPolicy object is described in the [kubernetes network policy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/#networkpolicy-resource)^[https://kubernetes.io/docs/concepts/services-networking/network-policies/#networkpolicy-resource]. You need to define a name of the network policy in the `metadata.name` field and you can specify the namespace this network policy is running in in the `metadata.namespace` field. After that you can specify the policy in the `spec` field. The `spec` field contains a `podSelector`, `policyTypes`, `ingress` and `egress` fields. The `podSelector` field selects the pods the policy will be applied to by defining labels. If the selector is empty all pods in the namespace are selected. Available `policyTypes` are `Ingress` and `Egress`. They can be added to this field to include them. The `Ingress` type is used for incoming requests and the `Egress` type is used for outgoing requests. If you don't specify this field, `Ingress` is activated by default and `Egress` only if an `Egress` rule is added. To add `Ingress` and `Egress` rules there is also the `ingress` and `egress` field in `spec`. Each `ingress` rule allows traffic which matches both the `from` and `ports` sections. The `egress` rules matches both the `to` and `ports` sections. Inside the `from` or `to` sections you can specify for example a `podSelector`, an `ipBlock` or a `namespaceSelector`. The full list of available options can be found in the [NetworkPolicy reference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicy-v1-networking-k8s-io)^[https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicy-v1-networking-k8s-io]. [@k8net]
+
+~~~{#lst:policyexmpl .yaml .numberLines caption="Example of NetworkPolicy"}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: multi-port-egress
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/24
+    ports:
+    - protocol: TCP
+      port: 32000
+      endPort: 32768
+~~~
+
+The example shows a network policy with an `Egress` rule that allows all pods and VMIs with the label `role: db` to connect to all pods and VMIs within the IP range 10.0.0.0/24 over TCP with the ports between 32000 and 32778. The source of the example can be found here: [@k8net].
 
 ### KubeVirt Snapshots
 KubeVirt has a feature called snapshots. This is currently not documented, but in the near future it may be a good solution for pausing VMs.
@@ -281,6 +281,49 @@ There is a comparison about different KubeVirt User Interfaces: [KubeVirt user i
 
 ### KubeVirt Additional Plugins
 The [local persistence volume static provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)^[https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner] manages the PersistentVolume lifecycle for preallocated disks.
+
+### cloud-init
+Cloud-init is a standard for cloud instance initialization. Cloud-init will read any provided metadata and initialize the system accordingly. This includes setting up network and storage devices and configuring SSH. For example it is possible to provide an ssh key as metadata. [@cloudinit]
+
+Cloud-init supports Windows and all major Linux distributions like: Arch, Alpine, Debian, Fedora, RHEL and SLES. [@cloudinitavail]
+
+Cloud-init needs to be integrated into the boot of the VM. For example this can be done with systemd. [@cloudinitboot] In addition cloud-init needs a datasource. There are many supported datasources for different cloud providers, but the most important for this project will be the NoCloud datasource, because this can be used in KubeVirt as we have already seen above. [@cloudinitdatasource] NoCloud allows to provide meta-data to the VM via files on a mounted filesystem. [@cloudinitnocloud]
+
+It is modularized and there are many modules available to support many different system configurations and different tools. The most important will be the SSH module and maybe Apt Configure, Disk Setup and Mount. All modules can be found in the [cloud-init Modules Documentation](https://cloudinit.readthedocs.io/en/latest/topics/modules.html)^[https://cloudinit.readthedocs.io/en/latest/topics/modules.html] and examples can be found in the [cloud-init config examples documentaion](https://cloudinit.readthedocs.io/en/latest/topics/examples.html)^[https://cloudinit.readthedocs.io/en/latest/topics/examples.html].
+
+~~~{#lst:nocloudexmpl .yaml .long .numberLines caption="Example VM with cloud-init NoCloud"}
+apiVersion: kubevirt.io/v1alpha1
+kind: VirtualMachine
+metadata:
+  name: myvm
+spec:
+  terminationGracePeriodSeconds: 5
+  domain:
+    resources:
+      requests:
+        memory: 64M
+    devices:
+      disks:
+      - name: registrydisk
+        volumeName: registryvolume
+        disk:
+          bus: virtio
+      - name: cloudinitdisk
+        volumeName: cloudinitvolume
+        disk:
+          bus: virtio
+  volumes:
+    - name: registryvolume
+      registryDisk:
+        image: kubevirt/cirros-registry-disk-demo:devel
+    - name: cloudinitvolume
+      cloudInitNoCloud:
+        userData: |
+          ssh-authorized-keys:
+            - ssh-rsa AAAAB3NzaK8L93bWxnyp test@test.com
+~~~
+
+This is an example that shows how cloud-init NoCloud could be used in KubeVirt to add an ssh key. The created VM contains two disks, one for the image that should be used and another disk that is used by cloud-init. The source can be found here: [@k8kubevirt].
 
 ## Base images
 
