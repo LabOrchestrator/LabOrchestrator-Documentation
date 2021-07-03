@@ -103,6 +103,7 @@ When a preset and a VMI define the same specs but with different values there is
 If you change a preset it is only applied to new created VMIs. Old VMIs doesn't change. [@kubevirtdocpreset]
 
 ### KubeVirt Disks and Volumes
+
 #### Disks
 Disks are like virtual disks to the VM. They can for example be mounted from inside /dev. Disks are specified in `spec.domain.devices.disks` and need to reference the name of a volume. [@kubevirtdocdisks]
 
@@ -166,6 +167,26 @@ FROM scratch
 ADD --chown=107:107 https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 /disk/
 ~~~
 
+~~~{#lst:exmplcontainerdisk .dockerfile .numberLines caption="Example VMI with Container Disk"}
+metadata:
+  name: testvmi-containerdisk
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachineInstance
+spec:
+  domain:
+    resources:
+      requests:
+        memory: 8G
+    devices:
+      disks:
+      - name: containerdisk
+        disk: {}
+  volumes:
+    - name: containerdisk
+      containerDisk:
+        image: vmidisks/fedora25:latest
+~~~
+
 The source of the examples can be found in [@kubevirtdocdisks]. The dockerfiles can then be build with `docker build -t example/example:latest .` and pushed to a remote docker container registry with `docker push example/example:latest`. [@kubevirtdocdisks]
 
 #### Empty Disks and Ephemeral Disks
@@ -177,8 +198,6 @@ The difference between `ephemeral` and `emptyDisk` is, that `ephemeral` disks ar
 
 #### Remaining Volumes
 `hostDisk`, `configMap`, `secrets` and the other volumes are explained in the [KubeVirt Disks and Volumes Documentation](https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/)^[https://kubevirt.io/user-guide/virtual_machines/disks_and_volumes/].
-
-#### Examples
 
 ### KubeVirt Interfaces and Networks
 There are two parts needed to connect a VM to a network. First there is the interface that is a virtual network interface of a virtual machine and second there is the network which connects VMs to logical or physical devices.
@@ -253,16 +272,39 @@ spec:
 
 The example shows a network policy with an `Egress` rule that allows all pods and VMIs with the label `role: db` to connect to all pods and VMIs within the IP range 10.0.0.0/24 over TCP with the ports between 32000 and 32778. The source of the example can be found here: [@k8net].
 
-### KubeVirt Snapshots
-KubeVirt has a feature called snapshots. This is currently not documented, but in the near future it may be a good solution for pausing VMs.
-
 ### KubeVirt ReplicaSets
-https://kubevirt.io/user-guide/virtual_machines/replicaset/
-
-### KubeVirt Running Windows
-https://kubevirt.io/user-guide/virtual_machines/windows_virtio_drivers/
+`VirtualMachineInstanceReplicaSet`s are similar like Kubernetes `ReplicaSets`. They are used to deploy multiple instances of the same VMI to guarantee uptime. There is no state in the instances of a `ReplicaSet` so you need to use read-only or internal writable tmpfs disks. Since our labs need a state we probably won't need `ReplicaSets`. [@kubevirtreplicas]
 
 ### KubeVirt Services
+VMIs can be exposed with services. Services were explained [earlier](#services). This is needed to connect to a VMI for example over SSH. Services use labels to identify the VMI, so you need to add labels to the VMI you want to connect to. To create a new Service you can either create a File and load it with `kubectl -f file.yaml` or you can use the `virtctl` tool (remember it may also be used with `kubectl virt`): `virtctl expose virtualmachineinstance vmi-ephemeral --name lbsvc --type LoadBalancer --port 27017 --target-port 3389`. This command uses the type `LoadBalancer`, other types are `NodePort` and `ClusterIP`. [@kubevirtservices]
+
+~~~{#lst:kubevirtservicevmi .yaml .long .numberLines caption="Example VMI with Labels"}
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachineInstance
+metadata:
+  name: vmi-ephemeral
+  labels:
+    special: key
+spec:
+  ...
+~~~
+
+~~~{#lst:kubevirtservicevmi .yaml .long .numberLines caption="Example VMI exposed as Service"}
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmiservice
+spec:
+  ports:
+  - port: 27017
+    protocol: TCP
+    targetPort: 22
+  selector:
+    special: key
+  type: ClusterIP
+~~~
+
+The examples are from [KubeVirts Service Objects Documentation](https://kubevirt.io/user-guide/virtual_machines/service_objects/)^[https://kubevirt.io/user-guide/virtual_machines/service_objects/] and they show a VMI with a Label and a Service that exposes SSH on this VMI.
 
 ### KubeVirt Other Features
 
@@ -271,13 +313,15 @@ There are several other features that we are not going into detail but recommend
 - [Virtual Hardware](https://kubevirt.io/user-guide/virtual_machines/virtual_hardware/)^[https://kubevirt.io/user-guide/virtual_machines/virtual_hardware/], e.g. Resources like CPU, timezone, GPU and memory.
 - [Liveness and Readiness Probes](https://kubevirt.io/user-guide/virtual_machines/liveness_and_readiness_probes/)^[https://kubevirt.io/user-guide/virtual_machines/liveness_and_readiness_probes/]
 - [Startup Scripts](https://kubevirt.io/user-guide/virtual_machines/startup_scripts/)^[https://kubevirt.io/user-guide/virtual_machines/startup_scripts/]
+- [KubeVirt Snapshots](https://docs.openshift.com/container-platform/4.6/virt/virtual_machines/virtual_disks/virt-managing-offline-vm-snapshots.html), may be used to pause VMs.
+- [KubeVirt user interface options](https://kubevirt.io/2019/KubeVirt_UI_options.html)^[https://kubevirt.io/2019/KubeVirt_UI_options.html], there are different KubeVirt User Interfaces.
 
-### KubeVirt CDI
+### KubeVirt Containerized Data Importer (CDI)
+The CDI is a separate project that can be added to KubeVirt. To use this you need to [install it](https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi)^[https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi].
+
+TODO
+
 https://kubevirt.io/user-guide/operations/containerized_data_importer/
-
-### KubeVirt UIs
-There is a comparison about different KubeVirt User Interfaces: [KubeVirt user interface options](https://kubevirt.io/2019/KubeVirt_UI_options.html)^[https://kubevirt.io/2019/KubeVirt_UI_options.html].
-
 
 ### KubeVirt Additional Plugins
 The [local persistence volume static provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)^[https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner] manages the PersistentVolume lifecycle for preallocated disks.
@@ -325,12 +369,100 @@ spec:
 
 This is an example that shows how cloud-init NoCloud could be used in KubeVirt to add an ssh key. The created VM contains two disks, one for the image that should be used and another disk that is used by cloud-init. The source can be found here: [@k8kubevirt].
 
+### KubeVirt Running Windows
+https://kubevirt.io/user-guide/virtual_machines/windows_virtio_drivers/
+
+## Building a custom VM
+In the first step we try to get a cloud image from a Linux distribution running inside of KubeVirt and then excess it. The second step tries to build a custom image on top of the cloud image. This is needed to install software for labs. In the third and fourth step we will install ttyd and NoVNC or alternatives of that and access them with a web browser.
+
+### Custom Base Image with Cloud-init Setup
+In KubeVirt you need cloud-images in the format of `qcow2` or `raw`. You can obtain your preferred distro from [the openstack image guide](https://docs.openstack.org/image-guide/obtain-images.html)^[https://docs.openstack.org/image-guide/obtain-images.html]. The list in the openstack image guide contains images that comes with cloud-init preinstalled. This is useful, because most of them doesn't have a default login and we need to add the login data with cloud-init. In this example we have used the [Ubuntu Hirsute cloud-image](https://cloud-images.ubuntu.com/releases/hirsute/release/)^[https://cloud-images.ubuntu.com/releases/hirsute/release/], saved it in the folder `images` and we have a docker hub account.
+
+~~~{#lst:exmpldockerfilecustomimage .dockerfile .long .numberLines caption="Example Dockerfile for Custom Image"}
+FROM scratch
+ADD --chown=107:107 images/ubuntu-21.04-server-cloudimg-amd64.img /disk/
+~~~
+
+After downloading the image create a dockerfile that adds the image into `/disk/.` The [listing 16](#lst:exmpldockerfilecustomimage) shows how to do this with the ubuntu image. Save this file in a file called `dockerfile`.
+
+After that, build the dockerfile with `docker build -t dockerhubusername/reponame:ubuntu2104 -f dockerfile .`. Then login the docker client to docker hub with `docker login` and providing your login credentials. Then upload the build image to docker hub with `docker push dockerhubusername/reponame:ubuntu2104`. Now you have a docker image in docker hub that contains the ubuntu cloud-image in `/disk/`.
+
+In the next step we will use this image with a container disk to run the ubuntu cloud-image. First create a file called `ubuntu_container_disk.yaml` and add a container disk setup.
+
+~~~{#lst:exmplcontainerdiskcustomimage .yaml .long .numberLines caption="Example Container Disk for Custom Image"}
+metadata:
+  name: testvmi-containerdisk
+  labels:
+    special: key
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachineInstance
+spec:
+  domain:
+    resources:
+      requests:
+        memory: 500M
+    devices:
+      disks:
+      - name: containerdisk
+        disk: {}
+      - name: cloudinitdisk
+        disk:
+          bus: virtio
+  volumes:
+    - name: containerdisk
+      containerDisk:
+        image: dockerhubusername/reponame:ubuntu2104
+    - name: cloudinitdisk
+      cloudInitNoCloud:
+        userData: |-
+          #cloud-config
+          users:
+            - name: root
+              ssh-authorized-keys:
+                - ssh-rsa AAAABSSHKEY
+          ssh_pwauth: True
+          password: toor
+          chpasswd:
+            expire: False
+            list: |-
+               root:toor
+~~~
+
+The [listing 17](#lst:exmplcontainerdiskcustomimage) is an example of a container disk that uses the docker image we have created previously. Also there is a cloud-init NoCloud disk attached that adds login credentials that can be used to login to the VM via console and via ssh. In this example the username is root and the password toor. If you want to use ssh replace `ssh-rsa AAAABSSHKEY` with your ssh-key, else remove this part of the configuration. To disable password login set `ssh_pwauth: False`.
+
+Then run this VMI with the command `kubectl apply -f ubuntu_container_disk.yaml` and wait until the VMI is started with `kubectl wait --for=condition=Ready vmis/testvmi-containerdisk` or `kubectl wait --for=condition=Ready -f ubuntu_container_disk.yaml`.
+
+Now the VMI is running and you can access it over console: `kubectl virt console testvmi-containerdisk`. To access the ssh, you need to create a service and connect over `minikube ssh`. Create the service with `kubectl virt expose vmi testvmi-containerdisk --name vmiservice --port 27017 --target-port 22`. You can get the ip with `kubectl get svc`. To connect to ssh, you need to execute `minikube ssh`, then insert you ssh private key with:
+
+~~~{#lst:insertsshkey .bash .long .numberLines caption="Insert SSH Key in Minikube"}
+cat <<<EOF > ~/.ssh/id_rsa
+YOURSSHKEY
+EOF
+~~~
+
+After that change the permissions of the file to 600 with `chmod 600 ~/.ssh/id_rsa` and connect to the ip from the service on the given port with `ssh -p PORT root@IP` and you should be connected to the VMI.
+
+![Example of Console Login](./prototype/console.png){ width=95% }
+
+![Example of SSH](./prototype/setup.png){ width=95% }
+
+![Example of SSH Setup Login](./prototype/ssh.png){ width=95% }
+
+
+### Custom Image
+
+### Web Terminal Access
+
+### Web VNC Access
+
+
 ## Base images
 
 ## Web access to terminal
 
 ## Web access to graphical user interface
 https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
+
 ## Integration of terminal and graphical user interface web access to docker base image
 
 ## Integration of terminal and graphical user interface web access to VM base image
