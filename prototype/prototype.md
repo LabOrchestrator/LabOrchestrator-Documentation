@@ -449,7 +449,53 @@ After that change the permissions of the file to 600 with `chmod 600 ~/.ssh/id_r
 ![Example of SSH Setup Login](./prototype/ssh.png){ width=95% }
 
 
-### Custom Image
+### Customize Image
+
+#### Non Cloud Images
+
+If you use other images than cloud images, you need to install cloud-init manually. To use such an image, open it with gnome boxes, then install your software and shutdown. After that your qcow2 image is saved in `~/.var/app/org.gnome.Boxes/data/gnome-boxes/images/` if you installed gnome boxes with snap or in `~/.local/share/gnome-boxes` if you installed it with apt. [@gnomeboxeshelp]
+
+#### Startup, password and internet setup
+First install virt-customize, for example by following this guide: [Customize qcow2-raw-image templates with virt-customize](https://computingforgeeks.com/customize-qcow2-raw-image-templates-with-virt-customize/)^[https://computingforgeeks.com/customize-qcow2-raw-image-templates-with-virt-customize/]. [@computingforgeekscustomize]
+
+virt-customize allows you to customize your cloud images. The command `sudo virt-customize -a your_image.img --root-password password:StrongRootPassword` for example changes the password of the root user. This is needed, because most of the cloud images doesn't have a default root password. [@computingforgeekscustomize]
+
+Now you can start the image with gnome boxes by adding a new VM with this as image. This creates a new qcow2 image in `~/.var/app/org.gnome.Boxes/data/gnome-boxes/images/` if you installed gnome boxes with snap or in `~/.local/share/gnome-boxes` if you installed it with apt. [@gnomeboxeshelp] You can check the filetype with `file filename`. After every change on the original image you need to delete the VM and create a new or you directly change the new image. After starting the image login with the previously set root password. You need to connect to the internet with the command `dhclient`. This gets an ip-address.
+
+#### Resize
+To resize the image first stop it if you are running it. Check the image size with the command `qemu-img info your_image.img`. Then resize the image size with `sudo qemu-img resize your_image.img +4G` and check the new size again with `qemu-img info your_image.img`. [@computingforgeeksextend] [@mediumubuntucloud]
+
+Now start it and check how big the partitions are with `df -h`. Then execute `fdisk /dev/sda`. Then use `p` command to print all partitions and search for `Linux filesystem`. In the Ubuntu cloud image this is `/dev/sda1`. Next you need to delete this partition with the `d` command and then input the partition number (`1`). Now add a new partition with `n` and the same number (`1`) and then take the default values of the next two questions. After that don't remove the signature (`N`). Last execute `w` to write the changes. Now the partition is resized and you need to resize the filesystem. This is done with `resize2fs /dev/sda1`. [@computingforgeeksextend] [@sfextendspace] [@gistresize]
+
+Now you have a resized image of your cloud image in the gnome boxes folder. Make a backup of it by copying the file.
+
+In the following images, the host terminal has white background and the VM terminal has a black background.
+
+![Image size before change](prototype/img_size.png){ width=95% }
+
+![Image size after change](prototype/img_resize.png){ width=95% }
+
+![Disk size before change](prototype/fdisk1.png){ width=95% }
+
+![fdisk partition size before change](prototype/fdisk2.png){ width=95% }
+
+![fdisk delete partition and create new](prototype/fdisk3.png){ width=95% }
+
+![fdisk partition size after change and write changes](prototype/fdisk4.png){ width=95% }
+
+![Resize filesystem and disk size after change](prototype/fs_resize.png){ width=95% }
+
+\pagebreak
+
+#### Installing software
+
+There are two ways of installing software. The first uses `virt-customize` and the second uses gnome boxes.
+
+To install software with `virt-customize` you can append the command `--install PackageName`, e.g. `virt-customize -a your_image.img --install firefox`. This uses the default package manager.
+
+If it's not possible to install software with the package manager, you can use the second way, gnome boxes. Start the resized image and connect to internet (`dhclient`). Then update the software with `apt update && apt upgrade` and install your software and shutdown. Remember that you are editing the image in the gnome boxes folder and not the original image.
+
+#### Install Xorg
 
 ### Web Terminal Access
 
