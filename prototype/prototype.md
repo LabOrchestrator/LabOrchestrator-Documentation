@@ -491,15 +491,38 @@ In the following images, the host terminal has white background and the VM termi
 
 There are two ways of installing software. The first uses `virt-customize` and the second uses gnome boxes.
 
-To install software with `virt-customize` you can append the command `--install PackageName`, e.g. `virt-customize -a your_image.img --install firefox`. This uses the default package manager.
+To install software with `virt-customize` you can append the command `--install PackageName`, e.g. `virt-customize -a your_image.img --install firefox`. This uses the default package manager. [@computingforgeekscustomize]
 
 If it's not possible to install software with the package manager, you can use the second way, gnome boxes. Start the resized image and connect to internet (`dhclient`). Then update the software with `apt update && apt upgrade` and install your software and shutdown. Remember that you are editing the image in the gnome boxes folder and not the original image.
 
-#### Install Xorg
-
 ### Web Terminal Access
+In this step we will try to get access to the terminal over a website. There are two ways of archiving this goal, the first is to install ttyd or a similar software inside the VM and the second one is to run ttyd outside of the VM and share `kubevirt virt console`.
+
+#### ttyd inside VM
+To archive this, we need one of the VMs from before with enough space to install software.
+
+Start the VM in boxes and install ttyd with [this guide](https://github.com/tsl0922/ttyd#installation)^[https://github.com/tsl0922/ttyd#installation]. Then after the installation ttyd needs to be started automatically within systemstart. This can be done for example by adding a cronjob with `@reboot`. So execute `crontab -e` and add `@reboot ttyd bash` there. This will start `ttyd bash` when the system starts. It will automatically log in the user from which you run the cronjob. If you run `crontab -e` with the root user, the ttyd shell will have root permissions in the VM. If you run `crontab -e` with a custom user, the ttyd shell will have the permissions of this user. You can change `bash` with all other commands you want to be executed inside the webshell. `ttyd command` will execute the command and share it over http. In this scenario we like to have access to a bash console in the web browser, but you can also start a zsh or other shell or even nodejs, python interpreter or other software. [@ghttyd] [@ubuntuuserscron]
+
+After installing ttyd and starting it automatically on system start with cron, we need to run this image in Kubernetes and expose the ttyd service. For this first stop the VM and copy the generated qcow2 image from `~/.var/app/org.gnome.Boxes/data/gnome-boxes/images/` or `~/.local/share/gnome-boxes` to your folder. Then build a new docker image that adds this qcow2 file, an example is given in [listing 16](#lst:exmpldockerfilecustomimage). Push the image to your docker registry. Then start a new Kubernetes VM with an container disk attached that references this docker image like shown in [listing 17](#lst:exmplcontainerdiskcustomimage). If you are using listing 17, the root password that you may have set before will be overwritten.
+
+Now there should be our custom VM running in Kubernetes. To access the ttyd service we need to expose the port. The default ttyd port is 7681, so execute the command `kubectl virt expose vmi your_vmi_name --type=NodePort --name ttydservice --port 27017 --target-port 7681`. This creates a Kubernetes NodePort service, that makes it possible for us to access the port 7681 of the VM over the ip of our node with the port 27017. `minikube service ttydservice` will let us connect to the service and open it in our default browser. [@kubernetesnodeport]
+
+![ttyd running inside the container](./prototype/inside_vm.png){ width=95% }
+
+This allows us to create custom images and access them with any software, for example bash, zsh, python, nodejs. This solution is very customizable, but it's not possible to share the system console which shows e.g. the boot process.
+
+#### ttyd outside VM
+
+The second way is to run ttyd outside of the container and run `ttyd kubectl virt console your_vmi_name`. This allows to share the console of the VM with ttyd and this includes the boot process of the VM. VM developers can't customize which command is executed here, because this is run on the host machine. Also you aren't logged in automatically. It may be possible to run this in a second container that maintains the VMs but that for another time.
+
+![ttyd running outside the container](./prototype/outside_vm.png){ width=95% }
+
+\pagebreak
 
 ### Web VNC Access
+
+#### Install Xorg
+https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/
 
 
 ## Base images
