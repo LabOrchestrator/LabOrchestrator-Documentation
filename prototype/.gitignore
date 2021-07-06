@@ -1,3 +1,5 @@
 images
 ubuntu_container_disk.dockerfile
 ubuntu_container_disk.yaml
+ubuntu_desktop.yaml
+ubuntu_cloud_gnome.yaml

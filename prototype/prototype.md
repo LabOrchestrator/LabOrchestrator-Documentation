@@ -5,7 +5,7 @@
 ## KubeVirt and Virtual Machines
 You should have installed kubectl and minikube with activated kubevirt addon.
 
-KubeVirt has a tool called Containerized Data Importer (CDI), which is designed to import Virtual Machine images for use with KubeVirt. This needs to be installed from here: [Containerized Data Importer (CDI)](https://kubevirt.io/labs/kubernetes/lab2.html)^[https://kubevirt.io/labs/kubernetes/lab2.html].
+KubeVirt has a tool called Containerized Data Importer (CDI), which is designed to import Virtual Machine images for use with KubeVirt. This needs to be installed from here if you haven't already done this: [Containerized Data Importer (CDI)](https://kubevirt.io/labs/kubernetes/lab2.html)^[https://kubevirt.io/labs/kubernetes/lab2.html].
 
 The installation of KubeVirt and CDI adds several new CRs, which can be found in the [documentation of kubevirt](https://kubevirt.io/user-guide/)^[https://kubevirt.io/user-guide/].
 
@@ -317,7 +317,7 @@ There are several other features that we are not going into detail but recommend
 - [KubeVirt user interface options](https://kubevirt.io/2019/KubeVirt_UI_options.html)^[https://kubevirt.io/2019/KubeVirt_UI_options.html], there are different KubeVirt User Interfaces.
 
 ### KubeVirt Containerized Data Importer (CDI)
-The CDI is a separate project that can be added to KubeVirt. To use this you need to [install it](https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi)^[https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi].
+The CDI is a separate project that can be added to KubeVirt. To use this you need to [install it](https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi)^[https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi] if you haven't already done this.
 
 TODO
 
@@ -373,7 +373,7 @@ This is an example that shows how cloud-init NoCloud could be used in KubeVirt t
 https://kubevirt.io/user-guide/virtual_machines/windows_virtio_drivers/
 
 ## Building a custom VM
-In the first step we try to get a cloud image from a Linux distribution running inside of KubeVirt and then excess it. The second step tries to build a custom image on top of the cloud image. This is needed to install software for labs. In the third and fourth step we will install ttyd and NoVNC or alternatives of that and access them with a web browser.
+In the first step we try to get a cloud image from a Linux distribution running inside of KubeVirt and then excess it. The second step tries to build a custom image on top of the cloud image. This is needed to install software for labs. In the third and fourth step we will install ttyd and noVNC or alternatives of that and access them with a web browser.
 
 ### Custom Base Image with Cloud-init Setup
 In KubeVirt you need cloud-images in the format of `qcow2` or `raw`. You can obtain your preferred distro from [the openstack image guide](https://docs.openstack.org/image-guide/obtain-images.html)^[https://docs.openstack.org/image-guide/obtain-images.html]. The list in the openstack image guide contains images that comes with cloud-init preinstalled. This is useful, because most of them doesn't have a default login and we need to add the login data with cloud-init. In this example we have used the [Ubuntu Hirsute cloud-image](https://cloud-images.ubuntu.com/releases/hirsute/release/)^[https://cloud-images.ubuntu.com/releases/hirsute/release/], saved it in the folder `images` and we have a docker hub account.
@@ -521,8 +521,61 @@ The second way is to run ttyd outside of the container and run `ttyd kubectl vir
 
 ### Web VNC Access
 
-#### Install Xorg
+#### Tools
+
+noVNC is a VNC viewer that runs in the browser. Usually VNC uses TCP sockets, but noVNC needs websockets. There is a tool called websockify which converts TCP sockets to websockets. This can be used to connect noVNC to any VNC server. [@psqemunovnc]
+
+KubeVirt has a command that creates a VNC server and opens a VNC client for any VMI: `kubectl virt vnc your_vmi_name`. If you want to connect your own VNC client there is the command kubectl `virt vnc your_vmi_name --proxy-only`. This creates a VNC server for the VMI with an TCP proxy. [@kubevirtaccess]
+
+There is also a tool called [virtVNC](https://github.com/wavezhang/virtVNC)^[https://github.com/wavezhang/virtVNC]. This tool can be used to access the VMIs graphical console using noVNC and combines the above two tools.
+
+#### Preparing images
+
+VNC enables us to use the desktop of the system. So we need to have images with a desktop environment installed. There are two ways of archiving this: 1. install desktop environment in cloud-images or 2. use images that already have a desktop environment installed.
+
+#### Preparing desktop images with cloud-init
+
+We will use an ubuntu 20.04 desktop image in this step with gnome installed. You can download the image from [here](https://ubuntu.com/download/desktop/thank-you?version=20.04.2.0&architecture=amd64)^[https://ubuntu.com/download/desktop/thank-you?version=20.04.2.0&architecture=amd64] or use other images. Open the image in gnome boxes and install it. After the installation and configuration of the system start it and install cloud-init. An example installation tutorial for ubuntu can be found [here](https://zoomadmin.com/HowToInstall/UbuntuPackage/cloud-init)^[https://zoomadmin.com/HowToInstall/UbuntuPackage/cloud-init]. After the installation of ubuntu and cloud-init stop the VM and copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier.
+
+While starting the image in minikube an error occurred in my system: "no space left on device". This is because minikube runs in a VM that has a fixed size of 16GB by default, only 2GB left free and the image has 10GB. You can check how much space is available inside minikube by executing `minikube ssh` and then `df -h`. To fix this issue, you need to stop and delete your minikube instance and then create a new with the parameter `--disk-size=XXGB` where `XX` is the size you want. [@minikubedisksize] [@sominikubenospace] Commands:
+
+1. `minikube stop`
+2. `minikube delete`
+3. `minikube start --vm-driver=kvm2 --disk-size=50GB`
+4. Then reinstall everything: KubeVirt, virtVNC, etc.
+
+Now start this image in Kubernetes. This may take a while because you need to download the image which might be very big. You can check if VNC is working by executing `kubectl virt vnc your_vmi_name`. If you can see the desktop it's working. [@zoomadmincloudinit]
+
+After connecting to the VNC of the Ubuntu machine you are able to login. The login and loading of Gnome takes some time. At the moment we don't know why, but maybe it would be faster if we attach a GPU to the cluster. Fasten up the VMs will be done in a different step. TODO
+
+#### Preparing cloud images with desktop environment
+
+In this step we use the previously build ubuntu cloud image, that has be resized. To install gnome-desktop you need at least 2.2GB free space on the VM. To install gnome-desktop in ubuntu cloud image start it in boxes and then execute `apt install ubuntu-gnome-desktop`. After that shutdown the VM, copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier. Now start this image in Kubernetes. You can check if VNC is working by executing `kubectl virt vnc your_vmi_name`. If you can see the desktop it's working. [@ghggnomecloud]
+
 https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/
+
+#### Connect noVNC to kubectl vnc
+
+
+
+#### virtVNC
+
+`virtVNC` can be installed by just applying their yaml file: `kubectl apply -f https://github.com/wavezhang/virtVNC/raw/master/k8s/virtvnc.yaml`. After this is deployed to you minikube cluster, you can see there is a new service installed with `kubectl get svc -n kubevirt virtvnc`. Execute `minikube service virtvnc -n kubevirt` to open `virtVNC` in your browser. [@kubevirtaccess]
+
+![virtVNC list of VMs](./prototype/virtVNC.png){ width=95% }
+
+`virtVNC` enables you to have a minimalistic dashboard, where you can see all running VMs and access their desktop over noVNC. You can filter the namespace by appending `?namespace=your_namespace` to the url. If VMs are currently not running but starting, for example if the image is downloading, they are shown with message `Scheduling`. An example of this is shown in Figure 14. [@kubevirtaccess]
+
+
+![virtVNC showing a console](./prototype/virtVNC_console.png){ width=95% }
+
+If you don't have a desktop environment installed, virtVNC gives you access to the console. This is seen in Figure 15.
+
+![virtVNC showing Gnome](./prototype/ubuntu_desktop.png){ width=95% }
+
+In the Figure 16 you can see the noVNC connection to the Ubuntu VM.
+
+virtVNC doesn't have a permission system out of the box and it's possible to access any VNC console from any VM. In the lab orchestrator we need to be able to restrict users from accessing VMs that aren't theirs. Maybe we can extend virtVNC with a permission system or user authentication to restrict accessing every VM or build our own solution on top of the same principles like virtVNC. Maybe it will be enough to change the RBAC rules. Nevertheless, it is worth taking a look at how virtVNC works.
 
 
 ## Base images
