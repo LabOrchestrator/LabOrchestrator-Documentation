@@ -556,7 +556,17 @@ https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-s
 
 #### Connect noVNC to kubectl vnc
 
+Start the VNC proxy with `kubectl virt your_vmi_name --proxy-only`. In the output of the command the port where the VNC server is reachable is shown. Now you can access the VNC with your VNC viewer. If you connect with an RDP program, or if you disconnect the VNC viewer, the kubectl proxy will break. This may be a problem, because it seems to be easy to break this solution. Also if you restart, a new random port will be used if you don't specify a fixed port with `--port`.
 
+Install noVNC from [github.com/novnc/novnc](https://github.com/novnc/noVNC). You can run noVNC with `sudo novnc --listen 6081 --vnc localhost:40753`, where 6081 is the port where noVNC will be reachable and 40753 is the port where the VNC server is reachable. When starting this and the VNC server doesn't support websockets, websockify will automatically be started by noVNC. Now you can open this in your browser and connect to your VM.
+
+![noVNC and vnc proxy](./prototype/novncexe.png){ width=95% }
+
+![noVNC in browser](./prototype/novnc.png){ width=95% }
+
+`kubectl` is only a tool that wraps around the Kubernetes API. `kubevirt vnc` should executes some API commands to get a VNC connection. Maybe we can use this to directly get the VNC connection without kubevirt. This can then be used in our library.
+
+noVNC can also be run as a service and listen on multiple ports and connecting to multiple VNC servers. It's also possible to [embed noVNC into our own application](https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md)^[https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md].
 
 #### virtVNC
 
@@ -564,19 +574,18 @@ https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-s
 
 ![virtVNC list of VMs](./prototype/virtVNC.png){ width=95% }
 
-`virtVNC` enables you to have a minimalistic dashboard, where you can see all running VMs and access their desktop over noVNC. You can filter the namespace by appending `?namespace=your_namespace` to the url. If VMs are currently not running but starting, for example if the image is downloading, they are shown with message `Scheduling`. An example of this is shown in Figure 14. [@kubevirtaccess]
+`virtVNC` enables you to have a minimalistic dashboard, where you can see all running VMs and access their desktop over noVNC. You can filter the namespace by appending `?namespace=your_namespace` to the url. If VMs are currently not running but starting, for example if the image is downloading, they are shown with message `Scheduling`. An example of this is shown in Figure 16. [@kubevirtaccess]
 
 
 ![virtVNC showing a console](./prototype/virtVNC_console.png){ width=95% }
 
-If you don't have a desktop environment installed, virtVNC gives you access to the console. This is seen in Figure 15.
+If you don't have a desktop environment installed, virtVNC gives you access to the console. This is seen in Figure 17.
 
 ![virtVNC showing Gnome](./prototype/ubuntu_desktop.png){ width=95% }
 
-In the Figure 16 you can see the noVNC connection to the Ubuntu VM.
+In the Figure 18 you can see the noVNC connection to the Ubuntu VM.
 
 virtVNC doesn't have a permission system out of the box and it's possible to access any VNC console from any VM. In the lab orchestrator we need to be able to restrict users from accessing VMs that aren't theirs. Maybe we can extend virtVNC with a permission system or user authentication to restrict accessing every VM or build our own solution on top of the same principles like virtVNC. Maybe it will be enough to change the RBAC rules. Nevertheless, it is worth taking a look at how virtVNC works.
-
 
 ## Base images
 
