@@ -451,6 +451,10 @@ After that change the permissions of the file to 600 with `chmod 600 ~/.ssh/id_r
 
 ### Customize Image
 
+#### Docker Notice
+
+Because we use container disks in this part to run our VMs in the Kubernetes cluster and container disks are using docker you need to know about the build context of docker to prevent errors. The build context of docker is a folder from where all recursive contents of files and directories will be sent to the docker daemon. This is used by docker to isolate the context where the image is build and to prevent errors in later use of the image. If one of your subdirectories contains all your VM images, all of them will be sent to the docker daemon and this may slow down the build process. Also if your build context is too big docker hub will not accept your images even if they are much smaller (e.g. your docker image contains one VM and is 5GB big, but the context contains 6 VMs and is 30GB big). To speedup your builds and to prevent docker hub errors you should always separate your dockerfiles and VM images into different folders or exclude all VM images that you are not adding to the docker image in the `.dockerignore`. [@sobigcontext] [@dockercontext]
+
 #### Non Cloud Images
 
 If you use other images than cloud images, you need to install cloud-init manually. To use such an image, open it with gnome boxes, then install your software and shutdown. After that your qcow2 image is saved in `~/.var/app/org.gnome.Boxes/data/gnome-boxes/images/` if you installed gnome boxes with snap or in `~/.local/share/gnome-boxes` if you installed it with apt. [@gnomeboxeshelp]
@@ -550,13 +554,13 @@ After connecting to the VNC of the Ubuntu machine you are able to login. The log
 
 #### Preparing cloud images with desktop environment
 
-In this step we use the previously build ubuntu cloud image, that has be resized. To install gnome-desktop you need at least 2.2GB free space on the VM. To install gnome-desktop in ubuntu cloud image start it in boxes and then execute `apt install ubuntu-gnome-desktop`. After that shutdown the VM, copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier. Now start this image in Kubernetes. You can check if VNC is working by executing `kubectl virt vnc your_vmi_name`. If you can see the desktop it's working. [@ghggnomecloud]
+In this step we use the previously build ubuntu cloud image, that has be resized. To install gnome-desktop you need at least 2.2GB free space on the VM. To install gnome-desktop in ubuntu cloud image start it in boxes and then execute `apt install ubuntu-gnome-desktop`. After that shutdown the VM, copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier. Now start this image in Kubernetes with enough memory (e.g. 2GB). You can check if VNC is working by executing `kubectl virt vnc your_vmi_name`. If you can see the desktop and login it's working. [@ghggnomecloud]
 
-https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/
+To install other desktop environments you can follow the steps in this guide: [Ubuntu cloud desktop adding gui to your cloud server instance](https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/)^[https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/].
 
 #### Connect noVNC to kubectl vnc
 
-Start the VNC proxy with `kubectl virt your_vmi_name --proxy-only`. In the output of the command the port where the VNC server is reachable is shown. Now you can access the VNC with your VNC viewer. If you connect with an RDP program, or if you disconnect the VNC viewer, the kubectl proxy will break. This may be a problem, because it seems to be easy to break this solution. Also if you restart, a new random port will be used if you don't specify a fixed port with `--port`.
+Start the VNC proxy with `kubectl virt vnc your_vmi_name --proxy-only`. In the output of the command the port where the VNC server is reachable is shown. Now you can access the VNC with your VNC viewer. If you connect with an RDP program, or if you disconnect the VNC viewer, the kubectl proxy will break. This may be a problem, because it seems to be easy to break this solution. Also if you restart, a new random port will be used if you don't specify a fixed port with `--port`.
 
 Install noVNC from [github.com/novnc/novnc](https://github.com/novnc/noVNC). You can run noVNC with `sudo novnc --listen 6081 --vnc localhost:40753`, where 6081 is the port where noVNC will be reachable and 40753 is the port where the VNC server is reachable. When starting this and the VNC server doesn't support websockets, websockify will automatically be started by noVNC. Now you can open this in your browser and connect to your VM.
 
@@ -586,6 +590,19 @@ If you don't have a desktop environment installed, virtVNC gives you access to t
 In the Figure 18 you can see the noVNC connection to the Ubuntu VM.
 
 virtVNC doesn't have a permission system out of the box and it's possible to access any VNC console from any VM. In the lab orchestrator we need to be able to restrict users from accessing VMs that aren't theirs. Maybe we can extend virtVNC with a permission system or user authentication to restrict accessing every VM or build our own solution on top of the same principles like virtVNC. Maybe it will be enough to change the RBAC rules. Nevertheless, it is worth taking a look at how virtVNC works.
+
+TODO take a look at the scripts on this site:
+
+https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
+
+#### Directly accessing the API
+
+https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
+
+"We provide websocket api for VNC access under":
+
+`APISERVER:/apis/subresources.kubevirt.io/v1alpha3/namespaces/NAMESPACE/virtualmachineinstances/VM/vnc`
+
 
 ## Base images
 
