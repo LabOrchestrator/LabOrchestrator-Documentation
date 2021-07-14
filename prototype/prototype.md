@@ -591,17 +591,54 @@ In the Figure 18 you can see the noVNC connection to the Ubuntu VM.
 
 virtVNC doesn't have a permission system out of the box and it's possible to access any VNC console from any VM. In the lab orchestrator we need to be able to restrict users from accessing VMs that aren't theirs. Maybe we can extend virtVNC with a permission system or user authentication to restrict accessing every VM or build our own solution on top of the same principles like virtVNC. Maybe it will be enough to change the RBAC rules. Nevertheless, it is worth taking a look at how virtVNC works.
 
-TODO take a look at the scripts on this site:
-
-https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
-
 #### Directly accessing the API
 
-https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
+To understand what's happening in the virtVNC pod we will take a look at the script that is running there. You can see it in the [kubevirt docs about noVNC](https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html)^[https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html].
 
-"We provide websocket api for VNC access under":
+First of all there is a hint that KubeVirt provides Websocket api access for VNC under: `APISERVER:/apis/subresources.kubevirt.io/v1alpha3/namespaces/NAMESPACE/virtualmachineinstances/VM/vnc`. [@kubevirtnovnc]
 
-`APISERVER:/apis/subresources.kubevirt.io/v1alpha3/namespaces/NAMESPACE/virtualmachineinstances/VM/vnc`
+Kubernetes has an API and if you run Kubernetes with Minikube you can access the API over the ip of minikube: `minikube ip`. This API needs some authentication. To bypass the authentication you can run `kubectl proxy`. This gives you an ip and port where you can access the api without authentication.
+
+What's also needed is a python program called SimpleHTTPServer. You can start this server with `python -m SimpleHTTPServer`. Now the server will run on `localhost:8000` and serve all files in the current directory. [@simplehttp]
+
+Download noVNC with `git clone https://github.com/novnc/noVNC`. Then `cd` into the folder and run `python -m SimpleHTTPServer`. Now you are serving the noVNC files over your localhost. Check it by opening `localhost:8000/vnc.html` in your browser. If you see the noVNC client, it's working. [@kubevirtnovnc]
+
+`vnc.html` has three parameters that are needed by us: `host`, `port` and `path`. `host` and `port` refers to the host and port the websocket has to connect to. `path` is the path that should be used. noVNC will build the websocket url as `host:port/path`. Other parameters can be found here: [Embedding and Deploying noVNC Application](https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md)^[https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md]. [@ghnovncdeploy]
+
+Now you have a running noVNC server and can use the Kubernetes API unauthenticated. In my case `kubectl proxy` runs on port 8001 and noVNC (with SimpleHTTPServer) on 8000.
+
+The Kubernetes API server lets you query and manipulate the state of API objects in Kubernetes. Every resource we have used is available over the Kubernetes API and can be created and viewed over the API. For example pods, namespaces, VMs and volumes are all API objects. [@k8sapi]
+
+The Kubernetes API is a self describing API. And there are some URLs that explain the sub-URLs. For example some of the API methods/resources that we can use are listed in the following two URLs:
+
+- `http://localhost:8001/apis/kubevirt.io/v1alpha3/`
+- `http://localhost:8001/apis/subresources.kubevirt.io/v1alpha3`
+
+The first contains KubeVirt resources like VMs and VMIs and the second contains KubeVirt subresources like the VNC and console. Notice: The second URL does not work if you append a trailing `/` to the URL.
+
+As we already know some resources are available within namespaces, e.g. pods, VMs and VMIs. The API is structured like `<host>:<port>/apis/<resource_api>/<api_version>`. This will list all methods and resources available in this resource api. Then, when you want to open a resource and the resource is namespaced, it's structured like `<host>:<port>/apis/<resource_api>/<api_version>/namespaces/<namespace>/<resource>` and if you call a subresource `<host>:<port>/apis/<resource_api>/<api_version>/namespaces/<namespace>/<resource>/<subresource>`.
+
+To get all VMIs from namespace default you can make a GET request to the URL: `http://localhost:8001/apis/kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/`. VirtVNC uses this in the script to list all VMIs with status and name of the VMI. The result of the request contains information about the VMI. This contains the name (`metadata.name`) of the VMI, the phase (`status.phase`; e.g. "Running", "Failed"), the nodeName where the VMI is running (`status.nodeName`), the internal ip of the VMI (`status.interfaces[0].ipAddress`) and many other information for example the cloud-init configuration that contains our root password. This information maybe needs to be hidden from the user. The VMI name is used to identify the VMI in other calls. For example you can make a GET request to `http://localhost:8001/apis/kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/<your_vmi_name>`. This gives you only the details to the specific VMI and not a list of all VMIs.
+
+VirtVNC uses the above information to display all VMIs in the select page. Now when you click on one of the VMIs in VirtVNC it opens a new window with a link to the `vnc_lite.html` and the parameter `path` set to `apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/<your_vmi_name>/vnc`. This API URL is the one pointed out at the beginning that contains the Websocket api access for VNC.
+
+To test if your WebSocket works, you first need to assure that the VMI is running. Then you can execute `curl --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Sec-WebSocket-Version: 13" --header "Sec-WebSocket-Key: SomeKey" --include --no-buffer localhost:8001/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/<your_vmi_name>/vnc`. If curl doesn't throw an exception and remains in a running connection, the Websocket works. [@ghgwebsocketcurl]
+
+![Testing of Websockets with curl](./prototype/api_test.png){ width=95% }
+
+Figure 19 shows the `kubevirt proxy` in the first window, the SimpleHTTPServer serving the noVNC client in the second window and a working curl-Websocket test in the third window.
+
+Now you can open you own noVNC Url in the browser (`http://localhost:8000/vnc.html`) with the parameters `host=localhost`, `port=8001` and `path=apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/<your_vmi_name>/vnc`. In my case this results in the URL: `http://localhost:8000/vnc.html?host=localhost&port=8001&path=apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/ubuntu-cloud-gnome/vnc`.
+
+![Selfhostet noVNC interface](./prototype/customnovnc.png){ width=95% }
+
+![Selfhostet noVNC connected to VMI with login screen](./prototype/customnovncconnected.png){ width=95% }
+
+![Selfhostet noVNC connected to VMI logged in](./prototype/customnovncloggedin.png){ width=95% }
+
+The figures 20-22 shows our own custom noVNC instance connected to the VNC of the KubeVirt VMIs over the Kubernetes API.
+
+\pagebreak
 
 
 ## Base images
