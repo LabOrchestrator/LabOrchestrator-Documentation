@@ -53,6 +53,7 @@ header-includes:
     - '\AtBeginDocument{\floatplacement{codelisting}{H}}' # this enforces the position of listings
     - '\usepackage{fvextra}' # break lines in listings
     - '\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}' # break lines in listings
+    - '\usepackage[htt]{hyphenat}'
 
 
 ...
