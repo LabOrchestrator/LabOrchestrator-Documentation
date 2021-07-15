@@ -499,10 +499,10 @@ To install software with `virt-customize` you can append the command `--install 
 
 If it's not possible to install software with the package manager, you can use the second way, gnome boxes. Start the resized image and connect to internet (`dhclient`). Then update the software with `apt update && apt upgrade` and install your software and shutdown. Remember that you are editing the image in the gnome boxes folder and not the original image.
 
-### Web Terminal Access
+## Web Terminal Access
 In this step we will try to get access to the terminal over a website. There are two ways of archiving this goal, the first is to install ttyd or a similar software inside the VM and the second one is to run ttyd outside of the VM and share `kubevirt virt console`.
 
-#### ttyd inside VM
+### ttyd inside VM
 To archive this, we need one of the VMs from before with enough space to install software.
 
 Start the VM in boxes and install ttyd with [this guide](https://github.com/tsl0922/ttyd#installation)^[https://github.com/tsl0922/ttyd#installation]. Then after the installation ttyd needs to be started automatically within systemstart. This can be done for example by adding a cronjob with `@reboot`. So execute `crontab -e` and add `@reboot ttyd bash` there. This will start `ttyd bash` when the system starts. It will automatically log in the user from which you run the cronjob. If you run `crontab -e` with the root user, the ttyd shell will have root permissions in the VM. If you run `crontab -e` with a custom user, the ttyd shell will have the permissions of this user. You can change `bash` with all other commands you want to be executed inside the webshell. `ttyd command` will execute the command and share it over http. In this scenario we like to have access to a bash console in the web browser, but you can also start a zsh or other shell or even nodejs, python interpreter or other software. [@ghttyd] [@ubuntuuserscron]
@@ -515,7 +515,7 @@ Now there should be our custom VM running in Kubernetes. To access the ttyd serv
 
 This allows us to create custom images and access them with any software, for example bash, zsh, python, nodejs. This solution is very customizable, but it's not possible to share the system console which shows e.g. the boot process.
 
-#### ttyd outside VM
+### ttyd outside VM
 
 The second way is to run ttyd outside of the container and run `ttyd kubectl virt console your_vmi_name`. This allows to share the console of the VM with ttyd and this includes the boot process of the VM. VM developers can't customize which command is executed here, because this is run on the host machine. Also you aren't logged in automatically. It may be possible to run this in a second container that maintains the VMs but that for another time.
 
@@ -523,9 +523,9 @@ The second way is to run ttyd outside of the container and run `ttyd kubectl vir
 
 \pagebreak
 
-### Web VNC Access
+## Web VNC Access
 
-#### Tools
+### Tools
 
 noVNC is a VNC viewer that runs in the browser. Usually VNC uses TCP sockets, but noVNC needs websockets. There is a tool called websockify which converts TCP sockets to websockets. This can be used to connect noVNC to any VNC server. [@psqemunovnc]
 
@@ -533,11 +533,11 @@ KubeVirt has a command that creates a VNC server and opens a VNC client for any 
 
 There is also a tool called [virtVNC](https://github.com/wavezhang/virtVNC)^[https://github.com/wavezhang/virtVNC]. This tool can be used to access the VMIs graphical console using noVNC and combines the above two tools.
 
-#### Preparing images
+### Preparing images
 
 VNC enables us to use the desktop of the system. So we need to have images with a desktop environment installed. There are two ways of archiving this: 1. install desktop environment in cloud-images or 2. use images that already have a desktop environment installed.
 
-#### Preparing desktop images with cloud-init
+### Preparing desktop images with cloud-init
 
 We will use an ubuntu 20.04 desktop image in this step with gnome installed. You can download the image from [here](https://ubuntu.com/download/desktop/thank-you?version=20.04.2.0&architecture=amd64)^[https://ubuntu.com/download/desktop/thank-you?version=20.04.2.0&architecture=amd64] or use other images. Open the image in gnome boxes and install it. After the installation and configuration of the system start it and install cloud-init. An example installation tutorial for ubuntu can be found [here](https://zoomadmin.com/HowToInstall/UbuntuPackage/cloud-init)^[https://zoomadmin.com/HowToInstall/UbuntuPackage/cloud-init]. After the installation of ubuntu and cloud-init stop the VM and copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier.
 
@@ -552,13 +552,13 @@ Now start this image in Kubernetes. This may take a while because you need to do
 
 After connecting to the VNC of the Ubuntu machine you are able to login. The login and loading of Gnome takes some time. At the moment we don't know why, but maybe it would be faster if we attach a GPU to the cluster. Fasten up the VMs will be done in a different step. TODO
 
-#### Preparing cloud images with desktop environment
+### Preparing cloud images with desktop environment
 
 In this step we use the previously build ubuntu cloud image, that has be resized. To install gnome-desktop you need at least 2.2GB free space on the VM. To install gnome-desktop in ubuntu cloud image start it in boxes and then execute `apt install ubuntu-gnome-desktop`. After that shutdown the VM, copy the qcow2 image to your working folder, add it to a docker image and push it to docker hub like described earlier. Now start this image in Kubernetes with enough memory (e.g. 2GB). You can check if VNC is working by executing `kubectl virt vnc your_vmi_name`. If you can see the desktop and login it's working. [@ghggnomecloud]
 
 To install other desktop environments you can follow the steps in this guide: [Ubuntu cloud desktop adding gui to your cloud server instance](https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/)^[https://www.suhendro.com/2019/04/ubuntu-cloud-desktop-adding-gui-to-your-cloud-server-instance/].
 
-#### Connect noVNC to kubectl vnc
+### Connect noVNC to kubectl vnc
 
 Start the VNC proxy with `kubectl virt vnc your_vmi_name --proxy-only`. In the output of the command the port where the VNC server is reachable is shown. Now you can access the VNC with your VNC viewer. If you connect with an RDP program, or if you disconnect the VNC viewer, the kubectl proxy will break. This may be a problem, because it seems to be easy to break this solution. Also if you restart, a new random port will be used if you don't specify a fixed port with `--port`.
 
@@ -572,7 +572,7 @@ Install noVNC from [github.com/novnc/novnc](https://github.com/novnc/noVNC). You
 
 noVNC can also be run as a service and listen on multiple ports and connecting to multiple VNC servers. It's also possible to [embed noVNC into our own application](https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md)^[https://github.com/novnc/noVNC/blob/master/docs/EMBEDDING.md].
 
-#### virtVNC
+### virtVNC
 
 `virtVNC` can be installed by just applying their yaml file: `kubectl apply -f https://github.com/wavezhang/virtVNC/raw/master/k8s/virtvnc.yaml`. After this is deployed to you minikube cluster, you can see there is a new service installed with `kubectl get svc -n kubevirt virtvnc`. Execute `minikube service virtvnc -n kubevirt` to open `virtVNC` in your browser. [@kubevirtaccess]
 
@@ -591,7 +591,7 @@ In the Figure 18 you can see the noVNC connection to the Ubuntu VM.
 
 virtVNC doesn't have a permission system out of the box and it's possible to access any VNC console from any VM. In the lab orchestrator we need to be able to restrict users from accessing VMs that aren't theirs. Maybe we can extend virtVNC with a permission system or user authentication to restrict accessing every VM or build our own solution on top of the same principles like virtVNC. Maybe it will be enough to change the RBAC rules. Nevertheless, it is worth taking a look at how virtVNC works.
 
-#### Directly accessing the API
+### Directly accessing the API
 
 To understand what's happening in the virtVNC pod we will take a look at the script that is running there. You can see it in the [kubevirt docs about noVNC](https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html)^[https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html].
 
@@ -640,24 +640,6 @@ The figures 20-22 shows our own custom noVNC instance connected to the VNC of th
 
 \pagebreak
 
-
-## Base images
-
-## Web access to terminal
-
-## Web access to graphical user interface
-https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.html
-
-## Integration of terminal and graphical user interface web access to docker base image
-
-## Integration of terminal and graphical user interface web access to VM base image
-
-## Integration of base images in Kubernetes
-
-## Routing of base images in Kubernetes
-
-## Multi-user support
-
 ## Separation of labs
 
 In this step we want to archive a separation of labs. That means that if you are connected to one lab, you can't access another lab from there. For example you are connected to a VMI in the lab 1 and the VMI in lab 2 has the ip 10.244.120.80 and you try to ssh into the machine it should not work.
@@ -692,5 +674,48 @@ To check if the network policies work connect to one VMI in `lab2` with the comm
 
 Now we are able to deploy multiple VMIs in different namespaces and separate these namespaces from each other, so that if you are connected to one namespace you can only navigate inside this namespace. For every user we need to create one namespace, one network policy and any amount of VMIs.
 
-### Authorization
+## Authorization
 [KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
+
+
+## Multi-user support
+
+Hier wird nach einer lösung gesucht, womit es möglich ist mehrere user zu haben und dass ein user nur auf sein lab zugreifen kann.
+
+### Routing
+
+Hier werden die vnc und ttyd dienste, welche wir nutzen über ingresses oder services nach außen erreichbar gemacht. Für vnc werden wir vermutlich einen proxy bauen müssen oder ähnliches um die k8 api zu wrappen.
+
+## Docker
+
+Because everything we want to archive can already be done with VMs this step is just a bonus so that you can choose what you want to use.
+
+### Docker Basics
+
+### Building a custom Docker Image
+
+### Web access to terminal
+
+### Web access to graphical user interface
+
+### Separation of labs and authorization
+
+Separation of labs works the same as with KubeVirt, because we use Kubernetes features for this. To check this start two docker images in different namespaces and create the same network policies as before. Then connect into one docker container and ping the other. If this doesn't work everything is fine.
+
+Authorization was also just Kubernetes features and we don't need to change something for docker.
+
+### Routing
+
+## Conclusion
+
+### Web access to terminal
+
+For VMs we have two solutions to access the terminal: ttyd inside a VM and ttyd outside a VM. The first one ...
+
+### Web access to graphical user interface
+
+### Separation of labs, authorization and routing
+
+The separation of labs is done with network policies. We use one namespace for every lab and in this namespace a NetworkPolicy is created that isolates the VMIs and docker containers in this namespace from other namespaces.
+
+TODO
