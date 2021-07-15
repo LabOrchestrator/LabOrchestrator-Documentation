@@ -1,0 +1,9 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: lab1
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: lab2

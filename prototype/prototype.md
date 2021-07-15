@@ -658,5 +658,39 @@ https://kubevirt.io/2019/Access-Virtual-Machines-graphic-console-using-noVNC.htm
 
 ## Multi-user support
 
+## Separation of labs
+
+In this step we want to archive a separation of labs. That means that if you are connected to one lab, you can't access another lab from there. For example you are connected to a VMI in the lab 1 and the VMI in lab 2 has the ip 10.244.120.80 and you try to ssh into the machine it should not work.
+
+To archive this NetworkPolicy is needed. NetworkPolicy only work if you are running a network plugin that supports network policies for example calico. If you are using Minikube you can start the cluster with the network plugin calico with the following parameter: `--cni=calico`. If you haven't done this during the first start of Minikube, you need to delete your cluster and create a new one. If you don't do this, Kubernetes won't throw any errors in the next steps, but in the last step it will not fail when you ping the VMI in namespace `lab1`. [@k8networking] [@minikubesetup] [@k8networking2]
+
+To check if we can reach other namespaces create a new namespace using `kubectl create namespace testing`. Then create a second VMI yaml file and add `namespace: testing` to `metadata`. Then start the second VMI. Now you should have two VMIs: You can see the first one when you execute `kubectl get vmi` and the second when you execute `kubectl get vmi -n testing`. The command also shows you the ips of the VMIs. For reference my VMIs are called `ubuntu-cloud-gnome` and `ubuntu-cloud-gnome2`. Also the images have a default password set for the user `example` with the gnome-boxes way which was explained earlier.
+
+Now connect to the console of one VMI: `kubectl virt console ubuntu-cloud-gnome2 -n testing` or `kubectl virt console ubuntu-cloud-gnome`. Then connect to the ip of the other machine over ssh: `ssh example@172.17.0.18`. If that works, the connection between namespaces is allowed. With this method we can check if the network policies work. Now delete the namespace `testing` and the two VMIs.
+
+In the %project_name% every lab gets its own namespace and in this namespace there can be multiple VMs that you can connect to. To depict this create two namespaces called `lab1` and `lab2`.
+
+Network policies are bound to a namespace and only apply to this namespace. So if you create a network policy in the namespace `lab1` that denies all traffic to other namespaces, this only affects the namespace `lab1`. Because of this behavior we need to create one of these network policies in every namespace that we use as a lab. The network policy configuration that denies traffic to other namespaces can be found in the examples of [KubeVirts NetworkPolicy Documentation](https://kubevirt.io/user-guide/virtual_machines/networkpolicy/)^[https://kubevirt.io/user-guide/virtual_machines/networkpolicy/]. Create two of them, one for namespace `lab1` and one for `lab2`. You can display them with the command `kubectl get networkpolicy --all-namespaces` like in Figure 23. [@k8networking2]
+
+![NetworkPolicies in Namespaces lab1 and lab2](./prototype/networkpolicies.png){ width=95% }
+
+~~~{#lst:namespace .yaml .numberLines caption="Create two namespaces (prototype/examples/namespaces.yaml)" include=prototype/examples/namespaces.yaml}
+~~~
+
+~~~{#lst:networkpolicy_allow_same_ns .yaml .numberLines caption="NetworkPolicy allow same namespace (prototype/examples/network_policy_allow_same_namespace.yaml)" include=prototype/examples/network_policy_allow_same_namespace.yaml}
+~~~
+
+[Listing 19](#lst:namespace) creates two namespaces: `lab1` and `lab2`. [Listing 20](#lst:networkpolicy_allow_same_ns) creates two network policies that denies all traffic to other namespaces for the namespaces `lab1` and `lab2`. [@k8namespace]
+
+After that you can start some VMIs in these namespaces. For example we run one VMI in `lab1` and two in `lab2`. Now get the ip addresses of them with the command `kubectl get vmi --all-namespaces` like in Figure 24.
+
+![Multiple VMIs in different namespaces](./prototype/multiple_vmis_different_namespace.png){ width=95% }
+
+To check if the network policies work connect to one VMI in `lab2` with the command `kubectl virt console ubuntu-cloud-gnome -n lab2`. Then ping the ip of the VMI in `lab1`. If that doesn't work, the policy is working. After that ping the ip of the second VMI in `lab2`. That should work. Figure 25 shows an example of this step.
+
+![Check if network policies are working](./prototype/connection_between_namespaces.png)
+
+Now we are able to deploy multiple VMIs in different namespaces and separate these namespaces from each other, so that if you are connected to one namespace you can only navigate inside this namespace. For every user we need to create one namespace, one network policy and any amount of VMIs.
+
 ### Authorization
 [KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
