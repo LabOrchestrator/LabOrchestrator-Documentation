@@ -355,14 +355,16 @@ There are several other features that we are not going into detail but recommend
 - [KubeVirt Snapshots](https://docs.openshift.com/container-platform/4.6/virt/virtual_machines/virtual_disks/virt-managing-offline-vm-snapshots.html), may be used to pause VMs.
 - [KubeVirt user interface options](https://kubevirt.io/2019/KubeVirt_UI_options.html)^[https://kubevirt.io/2019/KubeVirt_UI_options.html], there are different KubeVirt User Interfaces.
 
-### KubeVirt Containerized Data Importer (CDI) TODO
+### KubeVirt Containerized Data Importer (CDI)
 The CDI is a separate project that can be added to KubeVirt. To use this you need to [install it](https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi)^[https://kubevirt.io/user-guide/operations/containerized_data_importer/#install-cdi] if you haven't already done this.
 
-TODO
+If you use minikube assure that the addons `storage-provisioner` and `default-storageclass` are enabled. If you don't use minikube, you need to create a persistent volume or a storage class.
 
-https://kubevirt.io/user-guide/operations/containerized_data_importer/
+There is a nice guide on how to upload VM images to KubeVirt with CDI that you can find [here](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/upload.md)^[https://github.com/kubevirt/containerized-data-importer/blob/main/doc/upload.md]. Because we will be using `ContainerDisks` instead of `DataVolumes` this is not as interesting and just a marginal note that you can use this way as alternative. In short you need to create a service for the CDI upload proxy, then create a `DataVolume` and an upload token. After that you can upload your images into the data volume with curl.
 
-### KubeVirt Additional Plugins TODO
+If you want to know more about CDI and uploading images directly to you cluster take a look at [KubeVirts CDI docs](https://kubevirt.io/user-guide/operations/containerized_data_importer/)^[https://kubevirt.io/user-guide/operations/containerized_data_importer/].
+
+### KubeVirt Additional Plugins
 The [local persistence volume static provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)^[https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner] manages the PersistentVolume lifecycle for preallocated disks.
 
 ### cloud-init
