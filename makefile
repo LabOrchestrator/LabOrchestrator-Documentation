@@ -2,6 +2,7 @@ doc_files=common/config.md \
 		  introduction/introduction.md \
 		  basics/basics.md \
 		  installation/installation.md \
+		  poc/poc.md \
 		  prototype/prototype.md \
 		  common/post.md
 

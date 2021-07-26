@@ -116,8 +116,8 @@ The library will not yet have authentication to start labs, only authorization w
 
 ## Milestones
 
-### Prototype
-First we need to develop a prototype that proves that the idea of labs is working with Kubernetes.
+### Proof of Concept and Prototype
+First we need to understand the concepts of Kubernetes and find a way to to deploy labs. This is done in the proof of concept. After that we will include this in a prototype that should proof that the idea of labs is possible.
 
 1. Install Kubernetes and KubeVirt
 2. Understand basics of Kubernetes and Kubernetes templates
