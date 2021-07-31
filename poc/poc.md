@@ -328,7 +328,7 @@ spec:
   ...
 ~~~
 
-~~~{#lst:kubevirtservicevmi .yaml .long .numberLines caption="Example VMI exposed as Service"}
+~~~{#lst:kubevirtservicevmi2 .yaml .long .numberLines caption="Example VMI exposed as Service"}
 apiVersion: v1
 kind: Service
 metadata:

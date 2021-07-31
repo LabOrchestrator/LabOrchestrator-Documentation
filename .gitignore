@@ -1,1 +1,10 @@
 .mypy_cache
+documentation.aux
+documentation.fdb_latexmk
+documentation.fls
+documentation.lof
+documentation.log
+documentation.lop
+documentation.out
+documentation.tex
+documentation.toc
