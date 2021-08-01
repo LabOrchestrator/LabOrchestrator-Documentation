@@ -108,6 +108,76 @@ The [Figure Application listing VMIs](#application-listing-vmis) shows the repre
 
 ### Access the API to run new VMIs
 
+First we need to know how to create and delete VMIs over the Kubernetes API. The [Kubernetes API Overview](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/)^[https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/] gives us a good overview about how to get, create, replace and delete Kubernetes objects. What's missing there are the KubeVirt resources, but the concepts are the same. You get all objects of a resource with a GET request to the resource URI as we already know. To get a specific object you need to make a GET request to the object URI (resource uri + /name-of-object). To create new objects the request must make a POST request to the resource URI. The object data needs to be attached in the body and the header `Content-Type` must describe the format of the body. Accepted formats are yaml, json and protobuf. To delete an object you need to get the URI to the object and make a DELETE request. [@k8sapioverview]
+
+To test this, we start `kubectl proxy` and try creating and deleting a VMI with curl.
+
+~~~{#lst:curlcreatevmi .bash .long .numberLines caption="curl create vmi"}
+curl \
+    -X POST \
+    --data-binary @"ubuntu_cloud_gnome.yaml" \
+    -H "Content-Type: application/yaml" \
+    http://localhost:8001/apis/kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/
+~~~
+
+~~~{#lst:curlcreatevmi2 .bash .long .numberLines caption="curl create vmi 2"}
+curl \
+    -X POST \
+    --data "$(cat ubuntu_cloud_gnome.yaml)" \
+    -H "Content-Type: application/yaml" \
+    http://localhost:8001/apis/kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/
+~~~
+
+
+~~~{#lst:ubuntu_cloud_gnome .yaml .long .numberLines caption="ubuntu_cloud_gnome.yaml" include=prototype/examples/accessing_api/ubuntu_cloud_gnome.yaml}
+~~~
+
+[Listing curl create vmi](#lst:curlcreatevmi) shows a curl command that creates a VMI. It attaches the content of the file in [Listing ubuntu_cloud_gnome.yaml](#lst:ubuntu_cloud_gnome) to the body and sets the header `Content-Type` to `application/yaml`. When we run `kubectl get vmi` a new VMI is shown. [Listing curl create vmi 2](#lst:curlcreatevmi2) does the same but it doesn't attach the file but attaches the file contents as string. This will have a benefit when implementing it in python, because we can generate the yaml string in python without saving it to a file. [@socurldata]
+
+~~~{#lst:curldeletevmi .bash .long .numberLines caption="curl delete vmi"}
+curl \
+    -X DELETE \
+    http://localhost:8001/apis/kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/ubuntu-cloud-gnome
+~~~
+
+[Listing curl delete vmi](#lst:curldeletevmi) shows a curl command that deletes the VMI that we have created before. When we run `kubectl get vmi` the VMI is succeeded or not displayed anymore.
+
+Now we add this to the application, but first we need to extend the permission of our service user, because for now it is not allowed to create VMIs. In the next step we want to create and delete VMIs so we need to add `create` and `delete` to the ClusterRole of our ServiceAccount.
+
+~~~{#lst:createdeleterole .yaml .long .numberLines caption="serviceaccount_version2.yaml" include=prototype/examples/accessing_api/serviceaccount_version2.yaml startLine=7 endLine=33 startFrom=7}
+~~~
+
+[Listing serviceaccount_version2.yaml](#lst:createdeleterole) shows the changed ClusterRole that contains create and delete permissions. This needs to be applied. [@k8srbac]
+
+Now we will add a VMI template to the docker image. This is used to deploy VMIs later.
+
+~~~{#lst:vmitemplate .yaml .long .numberLines caption="vmi_template.yaml" include=prototype/examples/accessing_api/vmi_template.yaml}
+~~~
+
+The template in [Listing vmi_template.yaml](#lst:vmitemplate) contains some variables: `${namespace}`, `${vmi_name}`, `${cores}`, `${memory}` and `${vm_image}`. `namespace` is the namespace this VMI is deployed to. `vmi_name` is its name. `cores` and `memory` are used to specify how much memory and cores the machine can use. `cores` needs to be an integer otherwise the api will throw an error. `vm_image` is the image location of our docker hub image in the format `USERNAME/REPO:VERSION`.
+
+This needs to be added to the dockerfile if you don't copy all files from this directory in it. Also add `pyyaml` to the `requests.txt`.
+
+After that we extend our `KubernetesAPI` class with delete and create possibilities, add new routes and a yaml template engine.
+
+~~~{#lst:apicreatedelete .py .long .numberLines caption="api-step2.py part 1" include=prototype/examples/accessing_api/api-step2.py startLine=42 endLine=77 startFrom=42}
+~~~
+
+
+The [Listing api-step2.py part 1](#lst:apicreatedelete) shows us the part of the KubernetesAPI that we have added. It contains four new methods: `post`, `create_vmi`, `delete` and `delete_vmi`. `post` and `delete` are two more generic methods that can be used to create and delete objects. To use the `post` method you need to add the data of the object in the yaml format. The `delete` method can delete resources. Due to currently missing permissions it's only possible to delete single objects and no collections, but the method will delete both when you add the correct permissions to the service account. The methods `create_vmi` and `delete_vmi` just prepares the URLs and then calls the generic methods.
+
+~~~{#lst:apitemplate .py .long .numberLines caption="api-step2.py part 2" include=prototype/examples/accessing_api/api-step2.py startLine=95 endLine=121 startFrom=95}
+~~~
+
+The [Listing api-step2.py part 2](#lst:apitemplate) shows the template engine. The template engine can read a yaml file and replace yaml variables with values from python variables. For this you need to create an object of the `TemplateEngine` and pass a data object into the class. This data object needs to be a dictionary that contains all variable names and its values. Then you can call the `load_yaml` method with the filename of the yaml file which gives you a yaml object with replaced variables. Alternatively you can directly call the `replace` method which will return the yaml as string instead of object. This is what we need for our creation of Kubernetes objects. [@sopyyamlreplace] [@pyyamldoc] [@sopyyamlint]
+
+~~~{#lst:apicreatedeleteroutes .py .long .numberLines caption="api-step2.py part 3" include=prototype/examples/accessing_api/api-step2.py startLine=137 endLine=160 startFrom=137}
+~~~
+
+Last but not least in [Listing api-step2.py part3](#lst:apicreatedeleteroutes) we can see the new routes. The first route is `/create_vmi`. In this method `request.args` is used to get the VMI name and the VM image location in docker hub from URL arguments. Then a dictionary is created that contains all key-value pairs that are needed for our template and a TemplateEngine object is initialized with this dictionary. Next the `replace` method gives us a string of the yaml template with all variables replaced with the values from the dictionary. This string is used to create a VMI with the `create_vmi` method. The `/delete_vmi` route is not that spectacular, it just gets an URL argument and calls the `delete_vmi` method. [@soflaskurlparam]
+
+Build the image, push it and recreate the pod. Now we have implemented the create and delete feature for VMIs. We are able to create VMIs with opening this URL in the browser: `http://192.168.50.45:30001/create_vmi?vmi_name=ubuntu-cloud-gnome2&vm_image=USERNAME/REPO:VERSION` (replace the CAPSCASE with your VM image). This creates a VMI with the name `ubuntu-cloud-gnome2` and the VM image you specified. The VMI will be deployed to the default namespace. With `kubectl get vmi` you can see another VMI starting in our cluster. After it has started we can delete it with opening: `http://192.168.50.45:30001/delete_vmi?vmi_name=ubuntu-cloud-gnome2`. All in all this is a bad API design, but it's enough for the prototype.
+
 ### Access VNC
 
 ## User Support

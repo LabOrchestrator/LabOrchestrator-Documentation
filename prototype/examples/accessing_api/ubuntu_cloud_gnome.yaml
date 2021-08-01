@@ -1,0 +1,27 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: lab1
+---
+metadata:
+  namespace: lab1
+  name: ubuntu-cloud-gnome
+  labels:
+    special: key
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachineInstance
+spec:
+  domain:
+    cpu:
+      cores: 3
+    resources:
+      requests:
+        memory: 3G
+    devices:
+      disks:
+      - name: containerdisk
+        disk: {}
+  volumes:
+    - name: containerdisk
+      containerDisk:
+        image: USERNAME/REPO:VERSION
