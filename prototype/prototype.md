@@ -79,26 +79,26 @@ This can now be used in our `api.py`.
 
 For now we have a simple hello world API application and we are able to access the Kubernetes API. This chapter is split up into three parts, will extend the prototype to first list all VMIs, then create new VMIs and last give us access to the console and VNC. In the first step we prepare the base that is needed to communicate with the Kubernetes API, i.e. reading the environment variables needed for configuration, reading the files containing the key, applying the ca cert. The second step extends the application with POST requests to create new resources. The challenge of the last step is that console and VNC uses websockets that we need to pass through the application and we need to serve the noVNC application.
 
-The following chapters will explain what we have done to achieve the chapters goals and will split the source code of some files. You can read the full files into the documentation folder: `prototype/examples/accessing_api/`.
+The following chapters will explain what we have done to achieve the chapters goals and will split the source code of some files. You can read the full files [on github](https://github.com/LernmodulController/LernmodulController-Documentation/tree/master/prototype/examples/accessing_api)^(https://github.com/LernmodulController/LernmodulController-Documentation/tree/master/prototype/examples/accessing_api).
 
 ### Access API to list VMIs
 
 For step one basic knowledge about flask and requests is required. You can get a quickstart into requests in the [requests quickstart](https://docs.python-requests.org/en/latest/user/quickstart/)^[https://docs.python-requests.org/en/latest/user/quickstart/] and a quickstart into flask in the [flask quickstart](https://flask.palletsprojects.com/en/2.0.x/quickstart/)^[https://flask.palletsprojects.com/en/2.0.x/quickstart/].
 
-~~~{#lst:apistep1p1 .yaml .long .numberLines caption="api.py step 1 part 1" include=prototype/examples/accessing_api/api-step1.py startLine=1 endLine=32}
+~~~{#lst:apistep1p1 .py .long .numberLines caption="api.py step 1 part 1" include=prototype/examples/accessing_api/api-step1.py startLine=1 endLine=38}
 ~~~
 
-The [Listing api.py step 1 part 1](#lst:apistep1p1) shows us the first part of the `api.py` after we implemented the goals of step 1. First we have added a class `KubernetesAPI` that wraps the Kubernetes API. It takes the host and port, the token, ca cert and a boolean to disable verification of ssl. This class contains a generic method `get` that makes requests to the api and by automatically setting the base URL to the right host and port and setting the authentication method to bearer token. Based on this generic method the `KubernetesAPI` class will be extended with methods that access resources. An example is `get_vmis`, which uses the `get` method to get all VMIs.
+The [Listing api.py step 1 part 1](#lst:apistep1p1) shows us the first part of the `api.py` after we implemented the goals of step 1. First we have added a class `KubernetesAPI` that wraps the Kubernetes API. It takes the host and port, the token, ca cert and a boolean to disable verification of ssl. This class contains a generic method `get` that makes requests to the api and by automatically setting the base URL to the right host and port, setting the authentication method to bearer token and using the ca cert file if provided. Based on this generic method the `KubernetesAPI` class will be extended with methods that access resources. An example is `get_vmis`, which uses the `get` method to get all VMIs.
 
-~~~{#lst:apistep1p2 .yaml .long .numberLines caption="api.py step 1 part 2" include=prototype/examples/accessing_api/api-step1.py startLine=35 endLine=50 startFrom=35}
+~~~{#lst:apistep1p2 .py .long .numberLines caption="api.py step 1 part 2" include=prototype/examples/accessing_api/api-step1.py startLine=41 endLine=53 startFrom=41}
 ~~~
 
-In [Listing api.py step 1 part 2](#lst:apistep1p2) the second part of the `api.py` is shown. The method `create_kubernetes_api_default` reads the host and port from environment variables and the files that contains the token and the ca cert. Then it creates a default instance of the `KubernetesAPI` that we can use in the flask routes.
+In [Listing api.py step 1 part 2](#lst:apistep1p2) the second part of the `api.py` is shown. The method `create_kubernetes_api_default` reads the host and port from environment variables and the file that contains the token and creates a variable with the location of the ca cert file. Then it creates a default instance of the `KubernetesAPI` that we can use in the flask routes.
 
-~~~{#lst:apistep1p3 .yaml .long .numberLines caption="api.py step 1 part 3" include=prototype/examples/accessing_api/api-step1.py startLine=53 endLine=66 startFrom=53}
+~~~{#lst:apistep1p3 .py .long .numberLines caption="api.py step 1 part 3" include=prototype/examples/accessing_api/api-step1.py startLine=61 endLine=72 startFrom=61}
 ~~~
 
-In [Listing api.py step 1 part 3](#lst:apistep1p3) the third part of the `api.py` is shown. In Line XXff we add another route to flask called `/vmis`. This route will return all VMIs of one namespace. For now we will only have access to VMIs in namespace default, but this will be changed in the next chapter. In this method the mimetype of the response is changed to `application/json`. In the response we return json and if we change the mimetype to json browsers, e.g. Firefox, will display them in comfortable way. [@soflaskjson] [@soflaskxml]
+In [Listing api.py step 1 part 3](#lst:apistep1p3) the third part of the `api.py` is shown. Here we add another route to flask called `/vmis`. This route will return all VMIs of one namespace. For now we will only have access to VMIs in namespace default, but this will be changed in the next chapter: [User Support](#user-support). In this method the mimetype of the response is changed to `application/json`. In the response we return json and if we change the mimetype to json browsers, e.g. Firefox, will display them in comfortable way. [@soflaskjson] [@soflaskxml]
 
 After the changes on the prototype you can rebuild and push the docker image and redeploy it to Kubernetes. You can get its URL with the command `minikube service --url serviceaccountapi -n lab-controller`. Now you can see a list of all VMIs that are running in the default namespace under `http://YOUR_URL:30001/vmis`. If you have no VMI running, you should start one to see an effect. To access the logs of your pod run the command `kubectl logs serviceaccountapi-deployment-RANDOM -n lab-controller`. [@k8sinteractpod]
 
@@ -110,7 +110,8 @@ The [Figure Application listing VMIs](#application-listing-vmis) shows the repre
 
 ### Access VNC
 
-## Authorization, Multi-user support and Routing TODO
+## User Support
+
 [KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
 
 Because Kubernetes can be accessed through an API, we can wrap all methods in an application and add authorization in a different layer. This will be shown in the prototype.

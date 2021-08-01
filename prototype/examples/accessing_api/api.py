@@ -22,7 +22,13 @@ class KubernetesAPI:
     def get(self, address):
         base_uri = f"https://{self.service_host}:{self.service_port}"
         headers = {"Authorization": f"Bearer {self.service_account_token}"}
-        response = requests.get(base_uri + address, headers=headers, verify=not self.insecure_ssl)
+        if self.insecure_ssl:
+            verify = False
+        elif self.cacert is None:
+            verify = True
+        else:
+            verify = self.cacert
+        response = requests.get(base_uri + address, headers=headers, verify=verify)
         return response.text
 
     def get_vmis(self, namespace=None):
@@ -38,12 +44,9 @@ def create_kubernetes_api_default():
     service_account_token = None
     with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as reader:
         service_account_token = reader.read()
-    cacert = None
-    with open('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', 'r') as reader:
-        cacert = reader.read()
+    cacert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
     k8s_api = KubernetesAPI(kubernetes_service_host, kubernetes_service_port,
                             service_account_token, cacert)
-    k8s_api.insecure_ssl = True
     return k8s_api
 
 
