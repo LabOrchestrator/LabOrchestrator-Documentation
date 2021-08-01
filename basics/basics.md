@@ -6,16 +6,16 @@ The %project_name% application uses different tools that may be explained before
 
 ## Generating The Documentation
 <!-- TODO: This should be added to the readme aswell -->
-The documentation is written in markdown and converted to a pdf using pandoc. To generate the documentation pandoc and latex are used. Install `pandoc`, `pandoc-citeproc` and a latex environment: [@markdownandpandoc]
+The documentation is written in markdown and converted to a pdf using pandoc. To generate the documentation pandoc and latex are used.
 
-```bash
-$ sudo apt install pandoc pandoc-citeproc make
-$ make docs
-```
+Installation: [@markdownandpandoc]
+- [Download pandoc version 2.14.1 from git](https://github.com/jgm/pandoc/releases/tag/2.14.1)^[https://github.com/jgm/pandoc/releases/tag/2.14.1] and install it
+- [Download pandoc-crossref](https://github.com/lierdakil/pandoc-crossref/releases)^[https://github.com/lierdakil/pandoc-crossref/releases] (v0.3.12.0b), extract the tar and copy the binary to `~/.local/bin` with the command `install pandoc-crossref`
+- [Build and install pandoc-include-code](https://github.com/owickstrom/pandoc-include-code#build)^[https://github.com/owickstrom/pandoc-include-code#build] (version 1.5.0.0) and extend you `$PATH` with `~/.cabal/bin`
+- A latex environment
+- make
 
 For the replacement of variables there is a lua script installed, so you need to install lua too. [@luavariablescript]
-
-After that, you need to install the pandoc-include-code and pandoc-crossref filters. For this, you need to download the latest release from here: [github.com/owickstrom/pandoc-include-code/releases](https://github.com/owickstrom/pandoc-include-code/releases)^[https://github.com/owickstrom/pandoc-include-code/releases] and here: [github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b](https://github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b)^[https://github.com/lierdakil/pandoc-crossref/releases/tag/v0.4.0.0-alpha4b]. Then extract the tar file and install it with the commands `install pandoc-include-code ~/.local/bin` and `install pandoc-crossref ~/.local/bin`. Also make sure `~/.local/bin` is included in `$PATH`. Optionally if your pandoc version is not the correct one, you need to build these tools by yourself.
 
 There is a make command to generate the docs: `make docs`.
 
