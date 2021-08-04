@@ -1,10 +1,5 @@
-kind: Namespace
-apiVersion: v1
 metadata:
-  name: lab1
----
-metadata:
-  namespace: lab1
+  namespace: default
   name: ubuntu-cloud-gnome
   labels:
     special: key
@@ -24,4 +19,4 @@ spec:
   volumes:
     - name: containerdisk
       containerDisk:
-        image: USERNAME/REPO:VERSION
+        image: biolachs2/testing:ubuntu-cloud-gnome

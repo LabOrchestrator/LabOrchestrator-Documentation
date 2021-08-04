@@ -133,16 +133,17 @@ def add_credentials():
 
 conf = {
     "websocket_remote_url": "ws://localhost:8001",
-    "websocket_api_path": "/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/{path}/vnc",
+    "websocket_api_path": "/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/{vmi_name}/vnc",
     "ws_proxy_host": "0.0.0.0",
     "ws_proxy_port": 5001,
     "flask_host": "0.0.0.0",
     "flask_port": 5000,
+    "local_dev_mode": False,
 }
 
 
 def run(conf):
-    wp = WebsocketProxy(conf["websocket_remote_url"], conf["websocket_api_path"])
+    wp = WebsocketProxy(conf["websocket_remote_url"], conf["websocket_api_path"], conf["local_dev_mode"])
     wp.run_in_thread(conf["ws_proxy_host"], conf["ws_proxy_port"])
     app.run(host=conf["flask_host"], port=conf["flask_port"], debug=False)
     wp.stop_thread()
@@ -150,15 +151,16 @@ def run(conf):
 
 
 def main():
+    global KUBERNETES_API
     # local dev mode disables reading the kubernetes service
     # account files and assumes you are running kubectl proxy
     local_dev_mode_str = os.environ.get("LOCAL_DEV_MODE", "False")
-    local_dev_mode = bool(strtobool(local_dev_mode_str))
-    if not local_dev_mode:
+    conf["local_dev_mode"] = bool(strtobool(local_dev_mode_str))
+    if not conf["local_dev_mode"]:
         kubernetes_service_host = os.environ["KUBERNETES_SERVICE_HOST"]
         kubernetes_service_port = os.environ["KUBERNETES_SERVICE_PORT"]
-        conf["websocket_remote_url"] = kubernetes_service_host + ":" + str(kubernetes_service_port)
-    KUBERNETES_API = create_kubernetes_api_default(local_dev_mode)
+        conf["websocket_remote_url"] = "wss://" + kubernetes_service_host + ":" + str(kubernetes_service_port)
+    KUBERNETES_API = create_kubernetes_api_default(conf["local_dev_mode"])
     run(conf)
 
 

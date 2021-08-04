@@ -180,6 +180,62 @@ Build the image, push it and recreate the pod. Now we have implemented the creat
 
 ### Access VNC
 
+First we need to create a websocket proxy in python, that creates one websocket connection to the Kubernetes api and another to the noVNC client that is accessible over the api. In the middle of this we can add our authentication. For the proxy we will use an [example from github](https://gist.github.com/bsergean/bad452fa543ec7df6b7fd496696b2cd8)^[https://gist.github.com/bsergean/bad452fa543ec7df6b7fd496696b2cd8] and modify it. [@ghgwebsocketproxy] [@websocketspy]
+
+~~~{#lst:wsproxyp1 .py .long .numberLines caption="ws_proxy-step3.py part 1" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=1 endLine=28}
+~~~
+
+`TOKEN_DB` and the methods `add_token` and `check_token` are used as simple authentication mechanism. If a token is included in this list and associated with the VMI name, then the user is allowed to access the VNC. This may be changed in the next chapter. `add_token` is used to add credentials to the database.
+
+~~~{#lst:wsproxyp2 .py .long .numberLines caption="ws_proxy-step3.py part 2" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=31 startFrom=31 endLine=55}
+~~~
+
+We have moved the code from the above example into a class called `WebsocketProxy`. During initialization you need to pass a `remote_url` and an `api_path`. The `api_path` needs to have `"{vmi_name}"` included because with `str.format` this will be inserted. With our Kubernetes API the `api_path` needs to be `"/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/{vmi_name}/vnc"`. The method `run` will run the `ws_proxy` in foreground and block the python main thread. `run_in_thread` will run the `ws_proxy` in another thread so it won't block the main thread. This is needed because our main thread is used by flask. `stop_thread` is needed to stop the thread if the program is to be terminated.
+
+~~~{#lst:wsproxyp3 .py .long .numberLines caption="ws_proxy-step3.py part 3" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=57 startFrom=57 endLine=92}
+~~~
+
+The method `proxy` is called whenever a new connection to the `ws_proxy` is made. This method first checks the authentication. This is done by splitting the path by a divider and taking the first argument as VMI name and the second as token. This is a useful authentication, because in noVNC we can only specify the path and not for example special headers or other authentication mechanisms. So because of noVNC we are limited to make authentication with this trick. After authentication was successful the method opens a new websocket to the Kubernetes API. There are two ways for this, one is with SSL, where also the self signed certificate is included and the bearer token is attached. And a second way for local development without this. After that every message that is send to the `ws_proxy` within this websocket connection is redirected to the Kubernetes API and the other way around as well. So at this point we have two websocket connections: first client to `ws_proxy` and second `ws_proxy` to Kubernetes. These connections are kept alive and only the messages are redirected. [@ghgwebsocketproxy] [@websocketspy] [@soasynciothread] [@pydoceventloop] [@sobug1] [@sobug2] [@soflaskthread] [@rtdwebsockets] [@sosecwebsock] [@sosecwebsock]
+
+~~~{#lst:wsproxyp3 .py .long .numberLines caption="ws_proxy-step3.py part 3" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=94 startFrom=94 endLine=100}
+~~~
+
+The next two methods are just methods that redirect the traffic between the websockets. [@ghgwebsocketproxy] [@websocketspy]
+
+~~~{#lst:wsproxyp4 .py .long .numberLines caption="ws_proxy-step3.py part 4" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=103 startFrom=103 endLine=112}
+~~~
+
+The line `if __name__ == '__main__':` checks if the file is executed directly or if it is included in another code. So this part only is executed if you run `python3 ws_proxy.py` and not if you include it in `api.py` and run `python3 api.py`. This is useful for development and testing of the module.
+
+We will save our websocket proxy in an extra file `ws_proxy.py` for more modularity. We can later include it into the `api.py`. Now we can start the proxy with `python ws_proxy.py`. Now if we start a connection to `localhost:8765/VMI_NAME/TOKEN` this proxy creates a connection to the Kubernetes api to the VNC websocket from the VMI with name `VMI_NAME`. The token is then checked if you have the correct rights to connect to this VMI.
+
+Now if we start the noVNC server with `python -m SimpleHTTPServer` we can access the proxied websocket at: `http://localhost:8000/vnc_lite.html?host=localhost&port=8765&path=ubuntu-cloud-gnome/supersecret`. If you change the token you won't get access. So as we see our websocket proxy is working and now we need to include it in the `api.py`.
+
+First we will move the `TemplateEngine` into its own file `template_engine.py`. And then make some changes to the `api.py` so that we can run it with `kubectl proxy` which will simplify development. I will not go into details here, you can check the difference of the steps by yourself with `diff api-step1.py api-step2.py`.
+
+~~~{#lst:apistep3 .py .long .numberLines caption="api-step3.py part 1" include=prototype/examples/accessing_api/api-step3.py startLine=123 startFrom=123 endLine=131}
+~~~
+
+This new route is used to add credentials that we need to connect to the VNC.
+
+~~~{#lst:apistep3 .py .long .numberLines caption="api-step3.py part 2" include=prototype/examples/accessing_api/api-step3.py startLine=134 startFrom=134 endLine=149}
+~~~
+
+First we have added a dictionary that contains some configuration for example the ports that should be used for `ws_proxy` and flask. This will later be changed to use environment variables. After that there is the method `run`, which will start the `ws_proxy` and flask and shuts the `ws_proxy` down after flask stopped.
+
+~~~{#lst:deploy3 .py .long .numberLines caption="api-deploy-step3.yaml" include=prototype/examples/accessing_api/api-deploy-step3.py startLine=17 startFrom=17}
+~~~
+
+We have (the last time) renamed the deployment and added the new port 5001.
+
+Now add `websockets` to the `requirements.txt`. Then add the new files to the dockerfile and rebuild and push the docker image. Then update it in Kubernetes and open it.
+
+Then we can call `minikube service --url lab-controller-api -n lab-controller` to get the URLs. We need to add our credentials with this URL:  
+`192.168.50.45:30001/add_credentials?user=marco&token=geheim&vmi_name=ubuntu-cloud-gnome`
+
+After that we can access the VNC in:  
+`http://localhost:8000/vnc_lite.html?host=192.168.50.45&port=30002&path=ubuntu-cloud-gnome/geheim`
+
 ## User Support
 
 [KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
