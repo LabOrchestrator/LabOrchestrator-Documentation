@@ -1,3 +1,4 @@
 api-deploy-private.yaml
 api.pyc
 ubuntu_cloud_gnome_private.yaml
+__pycache__

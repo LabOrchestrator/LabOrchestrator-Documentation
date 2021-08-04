@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serviceaccountapi-deployment
+  namespace: lab-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: serviceaccountapi
+  template:
+    metadata:
+      labels:
+        app: serviceaccountapi
+    spec:
+      serviceAccountName: lab-controller-account
+      containers:
+        - name: serviceaccountapi
+          image: USERNAME/REPO:VERSION
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: serviceaccountapi
+  name: serviceaccountapi
+  namespace: lab-controller
+spec:
+  selector:
+    app: serviceaccountapi
+  ports:
+    - port: 80 # incoming
+      protocol: TCP
+      targetPort: 5000 # port in the pod
+      nodePort: 30001
+  type: NodePort

@@ -6,6 +6,6 @@ COPY requirements.txt /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 
-COPY api.py vmi_template.yaml /app/
+COPY api.py template_engine.py ws_proxy.py vmi_template.yaml /app/
 
 CMD ["python", "api.py"]

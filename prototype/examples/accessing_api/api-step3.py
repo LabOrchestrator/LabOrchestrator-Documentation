@@ -133,7 +133,7 @@ def add_credentials():
 
 conf = {
     "websocket_remote_url": "ws://localhost:8001",
-    "websocket_api_path": "/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/{vmi_name}/vnc",
+    "websocket_api_path": "/apis/subresources.kubevirt.io/v1alpha3/namespaces/default/virtualmachineinstances/{path}/vnc",
     "ws_proxy_host": "0.0.0.0",
     "ws_proxy_port": 5001,
     "flask_host": "0.0.0.0",
@@ -150,7 +150,6 @@ def run(conf):
 
 
 def main():
-    global KUBERNETES_API
     # local dev mode disables reading the kubernetes service
     # account files and assumes you are running kubectl proxy
     local_dev_mode_str = os.environ.get("LOCAL_DEV_MODE", "False")
