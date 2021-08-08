@@ -58,16 +58,6 @@ def get_virtual_machine_instance(lab_instance_id, virtual_machine_instance_id):
     return CC.get().virtual_machine_instance_ctrl.make_response(r)
 
 
-@app.route("/lab_instance/<int:lab_instance_id>/virtual_machine_instances/<string:virtual_machine_instance_id>/vnc", methods=['GET'])
-@auth.login_required
-def get_vnc(lab_instance_id, virtual_machine_instance_id):
-    lab_instance = CC.get().lab_instance_ctrl.get(lab_instance_id)
-    if lab_instance.user_id != g.user.id:
-        abort(403)
-    r = CC.get().virtual_machine_instance_ctrl.get_of_lab_instance(lab_instance, virtual_machine_instance_id)
-    return CC.get().virtual_machine_instance_ctrl.make_response(r)
-
-
 @app.route("/docker_image", methods=["GET"])
 def get_docker_images():
     r = CC.get().docker_image_ctrl.get_list()

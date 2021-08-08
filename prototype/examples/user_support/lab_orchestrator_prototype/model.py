@@ -8,7 +8,7 @@ class DockerImage(db.Model):
     id = sql.Column(sql.Integer, primary_key=True)
     name = sql.Column(sql.String(32), unique=True)
     description = sql.Column(sql.String(128))
-    urls = sql.Column(sql.String(256))  # TODO rename to singular
+    url = sql.Column(sql.String(256))
 
 
 class Lab(db.Model):
@@ -17,7 +17,7 @@ class Lab(db.Model):
     name = sql.Column(sql.String(32), unique=True)
     namespace_prefix = sql.Column(sql.String(32), unique=True)
     description = sql.Column(sql.String(128))
-    docker_image = sql.Column(sql.Integer, sql.ForeignKey('docker_image.id'))  # rename to docker_image_id
+    docker_image_id = sql.Column(sql.Integer, sql.ForeignKey('docker_image.id'))
     docker_image_name = sql.Column(sql.String(32))
 
 

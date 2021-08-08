@@ -4,6 +4,7 @@ import asyncio
 import websockets
 import logging
 
+from lab_orchestrator_prototype.app import CC
 from lab_orchestrator_prototype.kubernetes.controller import LabInstanceController
 from lab_orchestrator_prototype.model import Lab, LabInstance
 from lab_orchestrator_prototype.user_management import User
@@ -49,8 +50,9 @@ class WebsocketProxy:
             await websocket.close(reason="invalid url")
             return
         lab_instance_id = splitted[1]
-        lab_instance = LabInstance.query.get(lab_instance_id)
-        lab = Lab.query.get(lab_instance.lab_id)
+        cc = CC.get()
+        lab_instance = cc.lab_instance_ctrl.get(lab_instance_id)
+        lab = cc.lab_ctrl.get(lab_instance.lab_id)
         namespace_name = LabInstanceController.get_namespace_name(lab_instance)
         vmi_name = lab.docker_image_name
         token = splitted[2]

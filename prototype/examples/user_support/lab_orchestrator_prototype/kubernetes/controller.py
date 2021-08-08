@@ -120,10 +120,10 @@ class DockerImageController(ModelController):
         return DockerImage
 
     def _serialize(self, obj):
-        return {'id': obj.id, 'name': obj.name, 'description': obj.description, 'urls': obj.urls}
+        return {'id': obj.id, 'name': obj.name, 'description': obj.description, 'url': obj.url}
 
-    def create(self, name, description, urls):
-        return self._create(name=name, description=description, urls=urls)
+    def create(self, name, description, url):
+        return self._create(name=name, description=description, url=url)
 
 
 class VirtualMachineInstanceController(NamespacedController):
@@ -139,9 +139,9 @@ class VirtualMachineInstanceController(NamespacedController):
         return self.registry.virtual_machine_instance
 
     def create(self, namespace, lab: Lab):
-        docker_image = self.docker_image_ctrl.get(lab.docker_image)
+        docker_image = self.docker_image_ctrl.get(lab.docker_image_id)
         template_data = {"cores": 3, "memory": "3G",
-                         "vm_image": docker_image.urls, "vmi_name": lab.docker_image_name,
+                         "vm_image": docker_image.url, "vmi_name": lab.docker_image_name,
                          "namespace": namespace}
         data = self._get_template(template_data)
         return self._api().create(namespace, data)
@@ -163,7 +163,7 @@ class LabController(ModelController):
 
     def _serialize(self, obj):
         return {'id': obj.id, 'name': obj.name, 'namespace_prefix': obj.namespace_prefix,
-                'description': obj.description, 'docker_image': obj.docker_image,
+                'description': obj.description, 'docker_image': obj.docker_image_id,
                 'docker_image_name': obj.docker_image_name}
 
     def create(self, name, namespace_prefix, description, docker_image: DockerImage, docker_image_name) -> db.Model:

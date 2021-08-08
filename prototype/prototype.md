@@ -238,6 +238,194 @@ After that we can access the VNC in:
 
 ## User Support
 
+https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+https://github.com/miguelgrinberg/REST-auth
+
+`curl -H "Content-Type: application/json" -X POST -d '{"username":"marco","password":"geheim"}' localhost:5000/api/users` [https://stackoverflow.com/questions/7172784/how-do-i-post-json-data-with-curl]
+
+`curl -u marco:geheim localhost:5000/api/resource`
+
+`curl -u marco:geheim localhost:5000/api/token`
+
+```
+{
+  "duration": 600, 
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4MjYyNDE5LjY4NDU3NDR9.lo3MsKr8iQXM0fnd06EmU97vo6iwggx49p3W1FOTaWc"
+}
+```
+
+`curl -u "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4MjYyNDE5LjY4NDU3NDR9.lo3MsKr8iQXM0fnd06EmU97vo6iwggx49p3W1FOTaWc":unused localhost:5000/api/resource`
+
+
+
+https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/
+https://flask-sqlalchemy.palletsprojects.com/en/2.x/queries/
+https://stackoverflow.com/questions/6750017/how-to-query-database-by-id-using-sqlalchemy
+https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
+https://stackoverflow.com/questions/41222412/sqlalchemy-init-takes-1-positional-argument-but-2-were-given-many-to-man
+https://stackoverflow.com/questions/10434599/get-the-data-received-in-a-flask-request
+https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+https://flask.palletsprojects.com/en/2.0.x/config/
+https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+
+
+Das Ergebnis
+
+During this step we included a refactoring of the old code.
+
+
+The KubernetesAPI was refactored and put into its own module called `kubernetes`. Before the refactoring, every Kubernetes API endpoint needed to be added into the KubernetesAPI class. Now you can write extensions and only need to add a class with the api URLs and register the class with an decorator. After the class is registered you can access it in the APIRegistry as a property. For example `APIRegistry(...).namespace` or `APIRegistry(...).virtual_machine_instances`.
+
+~~~{#lst:final_kube_api_1 .py .long .numberLines caption="kubernets/api.py Proxy" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=25 startFrom=25 endLine=58}
+~~~
+
+The KubernetesAPI class is renamed into Proxy. This class sends request to the Kubernetes api and adds required headers and verifies the right certificate.
+
+
+~~~{#lst:final_kube_api_2 .py .long .numberLines caption="kubernets/api.py ApiExtension" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=73 startFrom=73 endLine=106}
+~~~
+
+The api has two different types of API endpoints. The ones that only work with namespaces and the other that doesn't have a namespace. For example a namespace is a not namespaced resource and an VMI is a namespaced resource. The difference between these two types is how you build the URL. Every type has an identifier, but namespaced URLs has an namespace too. The ApiExtension class contains the basics for all api extensions and the NamespacedApi and NotNamespacedApi extends this to provide the two types of API endpoints. With this two abstract classes we are able to add any Kubernetes API endpoint to our library. [@k8sdocapi]
+
+~~~{#lst:final_kube_api_3 .py .long .numberLines caption="kubernets/api.py Extensions" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=109 startFrom=109 endLine=124}
+~~~
+
+The [listing kubernets/api.py Extensions](#lst:final_kube_api_3) shows three extensions we have added. One for the namespace resource, one for the VMIs and one for network policies. With this three extensions we are able to create, delete and get any of these resources. The extensions are registered with the decorators `add_api_not_namespaced` and `add_api_namespaced`. Without adding these decorators we are not able to use this extensions.
+
+~~~{#lst:final_kube_api_4 .py .long .numberLines caption="kubernets/api.py decorators" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=7 startFrom=7 endLine=22}
+~~~
+
+The methods `add_api_namespaced` and `add_api_not_namespaced` return the decorators. Decorators are methods that get a function or class passed as argument. The return value of the decorator will replace the decorated function or class. So with decorators you are able to replace a function or class with another function. We use decorators here to add the passed class to a dictionary. The key of the dictionary is the string passed into the outer function, i.e. `namespace` in the Namespace Extension and network_policy in the NetworkPolicy Extension. The value is a reference to the class. We have two dictionaries here: one for the namespaced extensions and one for the not-namespaced extensions. The decorators return the same as they got passed into so that the function or class will not be replaced.
+
+~~~{#lst:final_kube_api_5 .py .long .numberLines caption="kubernets/api.py APIRegistry" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=61 startFrom=61 endLine=70}
+~~~
+
+The `APIRegistry` can be initialized with an object of the `Proxy`. This class makes use of the magic method `__getattr__`. In python when you call a method or get an attribute of an object, python executes the method `__getattribute__` with the name of the method or attribute as parameter if this method is defined. If `__getattribute__` is not defined python will look if the class has this attribute or method itself. If that is not the case, python will execute the `__getattr__` method if it is defined. With defining one of this methods you can dynamically process attributes. In the `APIRegistry` this is used to add new attributes to the class for every extension class that is in the dictionaries. Every `add_api_namespaced` decorator will add an attribute to this class with an instance of the decorated class. So if you want to create a namespace you can simply call `APIRegistry(...).namespace.create(...)` or if you want to get all VMIs you can call `APIRegistry(...).virtual_machine_instances.get_list(...)`.
+
+~~~{#lst:final_model .py .long .numberLines caption="model.py" include=prototype/examples/user_support/lab_orchestrator_prototype/model.py startLine=6 startFrom=6 endLine=28}
+~~~
+
+We are using SQLAlchemy as ORM and added some database classes. The first class is `DockerImage`. This class contains a name, a description and a URL. This can be used to add docker images to the lab orchestrator which can later be injected into a VMI template. This makes creating labs easy, because you only need to have the URL to your docker image. The second class is `Lab` which contains a name, a namespace prefix, a description, a reference to a docker image and a name for the docker image. The namespace prefix is used to create namespaces when launching a lab and to separate this from other labs. That's the reason this needs to be unique. If you add a new lab you need to make sure your namespace prefix doesn't include characters that are not allowed in Kubernetes namespaces. The docker image is a reference to the first class and the idea ist that you can use a docker image for many labs if you don't need a custom image. For example you can create many labs that just use the default ubuntu image. The name of the docker image is used as VMI name and when adding new labs you need to make sure this doesn't include characters that are not allowed in Kubernetes VMI names. The third class is `LabInstance`. A lab instance is a lab that was started by a user, tho this class only references the user and the lab. [@sqlalchrela]
+
+Next we come to the controllers module. The controllers are used to group some services together and provide them in a central interface. They are used in the routes to access objects in the database model and the Kubernetes API. There are two types of main-controllers: `ModelController` and `KubernetesController`. The `KubernetesController` is further divided into two types: `NamespacedController` and `NotNamespacedController` so there is a total of three base classes that will be used.
+
+~~~{#lst:final_controller_1 .py .long .numberLines caption="kubernetes/controller.py ModelController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=14 startFrom=14 endLine=43}
+~~~
+
+The `ModelController` is a controller that adds methods for database models. When extending this class you need to implement the methods `_model` and `_serialize`. `_model` needs to return the model class and `_serialize` needs to return a dictionary that can be used to serialize the objects and return them as JSON in the API. When extending this class you are automatically able to get a list of all items in the database table, you can get a specific object by its identifier and you can delete objects. There is also a create method that can be used to create new objects. The last method provided in this base class is `make_response`, which is used in the routes and returns a jsonified version of the object or a list of objects.
+
+~~~{#lst:final_controller_2 .py .long .numberLines caption="kubernetes/controller.py KubernetesController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=46 startFrom=46 endLine=59}
+~~~
+
+The `KubernetesController` class makes use of the `TemplateEngine` and the `APIRegistry` to provide methods for Kubernetes api resources. The `make_response` method turns the string from the Kubernetes API into a response and adds the `application/json` mimetype.
+
+~~~{#lst:final_controller_3 .py .long .numberLines caption="kubernetes/controller.py Namespaced- and NotNamespacedController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=62 startFrom=62 endLine=87}
+~~~
+
+The `NamespacedController` and `NotNamespacedController` extend the `KubernetesController` to provide methods for the two types of Kubernetes API endpoints. This classes adds methods to get a list of all objects, get a specific object by its identifier and delete an object by its identifier. If you extend these classes you need to implement the `_api` method. This method needs to return the API extension class this controller should work onto.
+
+~~~{#lst:final_controller_4 .py .long .numberLines caption="kubernetes/controller.py NamespaceController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=90 startFrom=90 endLine=99}
+~~~
+
+~~~{#lst:namespacetemplate .yaml .long .numberLines caption="templates/namespace_template.yaml" include=prototype/examples/user_support/templates/namespace_template.yaml}
+~~~
+
+The `NamespaceController` implements the `NotNamespacedController` and adds the template for namespaces and a create method.
+
+~~~{#lst:final_controller_5 .py .long .numberLines caption="kubernetes/controller.py NetworkPolicyController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=102 startFrom=102 endLine=115}
+~~~
+
+~~~{#lst:networkpolicytemplate .yaml .long .numberLines caption="templates/network_policy_template.yaml" include=prototype/examples/user_support/templates/network_policy_template.yaml}
+~~~
+
+The `NetworkPolicyController` implements the `NamespacedController` and adds the template for network policies and a create method. Because you only add one of these network policies to a namespace the network policy name has a default value and can't be changed.
+
+~~~{#lst:final_controller_6 .py .long .numberLines caption="kubernetes/controller.py DockerImageController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=118 startFrom=118 endLine=126}
+~~~
+
+The `DockerImageController` implements the `ModelController` and adds a create method.
+
+~~~{#lst:final_controller_7 .py .long .numberLines caption="kubernetes/controller.py VirtualMachineInstanceController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=129 startFrom=129 endLine=152}
+~~~
+
+~~~{#lst:virtualmachineimagetemplate .yaml .long .numberLines caption="templates/vmi_template.yaml" include=prototype/examples/user_support/templates/vmi_template.yaml}
+~~~
+
+The `VirtualMachineInstanceController` implements the `NamespacedController` and adds a create method and some special methods. The create method adds some preconfigured variables to the template data like amount of cores and size of the memory. For now this can't be changed, but it would be easy to make it customizable. The name of the VMI is taken from the `docker_image_name` attribute of the lab object from which the VMI will be generated. The URL from where the docker image is taken is taken from the referenced docker image of the lab. The method `get_list_of_lab_instances` is used to find all instances of a given lab instance. This is useful to find the VMIs of your currently started Lab. The method `get_of_lab_instance` does the same, but only returns the specified VMI if it is contained in the lab instance. This is used for the details page in the API.
+
+~~~{#lst:final_controller_8 .py .long .numberLines caption="kubernetes/controller.py LabController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=160 startFrom=160 endLine=171}
+~~~
+
+The `LabController` implements the `ModelController` and adds a create method.
+
+~~~{#lst:final_controller_9 .py .long .numberLines caption="kubernetes/controller.py LabInstanceController 1" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=174 startFrom=174 endLine=197}
+~~~
+
+~~~{#lst:final_controller_10 .py .long .numberLines caption="kubernetes/controller.py LabInstanceController 2" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=199 startFrom=199 endLine=219}
+~~~
+
+The `LabInstanceController` implements the `ModelController` and adds many methods. There are two static methods that can be used to generate the namespace name the lab is running into. Then a create method is added. The create method first creates the lab instance in the database. Then it generates the namespace name and creates the new namespace. After that the network policy and the VMI are created in this namespace. This method contains no error handling so it may not work without notifying you if you for example configured a wrong namespace prefix. After the create method the delete method is overwritten. It deletes the database object and then deletes the namespace where the VMI and network policy is running in. With deleting the namespace every resource in this namespace gets deleted too. The last method is `get_list_of_user` which returns a list of lab instances that belong to the given user.
+
+~~~{#lst:final_controller_11 .py .long .numberLines caption="kubernetes/controller.py ControllerCollection" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=222 startFrom=222 endLine=229}
+~~~
+
+The `ControllerCollection` doesn't implement any controller base class. This class is only used to have a collection with every controller. An object of this class is used in the routes to get access to the controllers.
+
+The module `routes` contains the API routes. We have removed the old routes and added new routes. The routes are based on the Rest API design. You have the following URLs:
+
+- `/lab_instance`: GET, POST
+    - Users can see their lab instances
+    - Users can create new lab instances
+- `/lab_instance/<int:lab_instance_id>`: GET, DELETE
+    - Users can see details to their lab instances
+    - Users can delete their instance
+- `/lab_instance/<int:lab_instance_id>/virtual_machine_instances`: GET
+    - Users can see their VMIs
+- `/lab_instance/<int:lab_instance_id>/virtual_machine_instances/<string:virtual_machine_instance_id>`: GET
+    - Users can see details to their VMIs
+- `/docker_image`: GET, POST
+    - Everyone can see the docker images
+    - Admins can create new docker images
+- `/docker_image/<int:docker_image_id>`: GET, DELETE
+    - Everyone can see details to the docker images
+    - Admins can delete docker images
+- `/lab`: GET, POST
+    - Everyone can see the labs
+    - Admins can add new labs
+- `/lab/<int:lab_id>`: GET, DELETE
+    - Everyone can see details to the lab
+    - Admins can delete labs
+
+The methods in the routes uses the services in the Controllers in the `ControllerCollection` object and adds permissions. The last method in this module is only needed to load this module. Every route is added to the app with decorators and they are only executed if this module is loaded.
+
+The module `app` contains the flask app, the `SQLAlchemy` database object, the authentication objects, some basic configuration and a singleton class for the `ControllerCollection` object that is used in the routes.
+
+~~~{#lst:final_ws_proxy_1 .py .long .numberLines caption="kubernetes/ws_proxy.py 1" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=13 startFrom=13 endLine=15}
+~~~
+
+~~~{#lst:final_ws_proxy_2 .py .long .numberLines caption="kubernetes/ws_proxy.py 2" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=44 startFrom=44 endLine=65}
+~~~
+
+In the `ws_proxy` module we first removed the old authentication methods and replaced it with the JWT token authentication that we have added in the `user_management` module which we will explain in a moment. The `proxy` method has also some changes. The path now contains the id of the lab instance and a JWT token. The id is used to get the lab instance and the lab. This is needed to get the namespace name where the VMI is running and the VMI name. Both are needed to generate the VNC remote URL.
+
+Last part of the refactoring is the `api` module. Here we load the config from environment variables and setup the `Proxy` and `APIRegistry` object and the Controllers. After that the `ws_proxy` and flask app are started.
+
+TODO user management
+
+TODO anleitung um docker image und lab zu createn
+
+TODO quellen
+
+Starting a lab and accessing VNC: TODO ordentlich
+
+1. Start a lab instance: `curl -u admin:changeme -X POST -d lab_id=1 localhost:5000/lab_instance`
+2. Show the VMI: `curl -u admin:changeme localhost:5000/lab_instance/1/virtual_machine_instances/`
+3. Get JWT token: `curl -u admin:changeme localhost:5000/api/token`
+4. Show lab instances with token: `curl -u eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4NDM1MzQ2LjUwMzcyMzZ9.BofQxA6gUFCiZfg1oSNp-296jPmg7OdLcWA0HKLrPBI:unused localhost:5000/lab_instance`
+5. Open noVNC: `http://localhost:8000/vnc_lite.html?host=localhost&port=5001&path=1/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4NDM1MzQ2LjUwMzcyMzZ9.BofQxA6gUFCiZfg1oSNp-296jPmg7OdLcWA0HKLrPBI`
+
+
+
 [KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
 
 Because Kubernetes can be accessed through an API, we can wrap all methods in an application and add authorization in a different layer. This will be shown in the prototype.
