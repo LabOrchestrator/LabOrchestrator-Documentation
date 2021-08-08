@@ -1,0 +1,14 @@
+Flask
+requests
+certifi
+pyyaml
+websockets
+click
+Flask-HTTPAuth
+Flask-SQLAlchemy
+itsdangerous
+Jinja2
+MarkupSafe
+PyJWT
+SQLAlchemy
+Werkzeug
