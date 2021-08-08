@@ -19,4 +19,4 @@ spec:
   volumes:
     - name: containerdisk
       containerDisk:
-        image: biolachs2/testing:ubuntu-cloud-gnome
+        image: USERNAME/REPO:VERSION
