@@ -4,7 +4,7 @@
 
 In this chapter we will abstract the concepts of the last chapter and include them in a prototype. The prototype will add additional concepts like authentication and multi-user support. The prototype should be used to deploy labs and should on the one hand prove that this project is feasible and on the other hand serve as a template for the alpha phase.
 
-## Deploying an API to the cluster TODO
+## Deploying an API to the cluster
 
 The prototype will have an API and will be deployed with Kubernetes, so we first need an example API that will be deployed. For this we will use the [Flask Quickstart Example](https://flask.palletsprojects.com/en/2.0.x/quickstart/)^[https://flask.palletsprojects.com/en/2.0.x/quickstart/]:
 
@@ -33,7 +33,7 @@ Now we have an API in a docker container in docker hub, that needs to be integra
 
 Now we have our API running in Kubernetes. To test it, we can execute `minikube service --url helloworldapi -n lab-controller` and open the link in our browser. If the browser shows `Hello World` it has worked.
 
-## Using the Kubernetes API TODO
+## Using the Kubernetes API
 
 So for now we have an hello world API running in our cluster that is accessible through a `NodePort`. Next we need to get access to the Kubernetes API.
 
@@ -195,7 +195,7 @@ We have moved the code from the above example into a class called `WebsocketProx
 ~~~{#lst:wsproxyp3 .py .long .numberLines caption="ws_proxy-step3.py part 3" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=57 startFrom=57 endLine=92}
 ~~~
 
-The method `proxy` is called whenever a new connection to the `ws_proxy` is made. This method first checks the authentication. This is done by splitting the path by a divider and taking the first argument as VMI name and the second as token. This is a useful authentication, because in noVNC we can only specify the path and not for example special headers or other authentication mechanisms. So because of noVNC we are limited to make authentication with this trick. After authentication was successful the method opens a new websocket to the Kubernetes API. There are two ways for this, one is with SSL, where also the self signed certificate is included and the bearer token is attached. And a second way for local development without this. After that every message that is send to the `ws_proxy` within this websocket connection is redirected to the Kubernetes API and the other way around as well. So at this point we have two websocket connections: first client to `ws_proxy` and second `ws_proxy` to Kubernetes. These connections are kept alive and only the messages are redirected. [@ghgwebsocketproxy] [@websocketspy] [@soasynciothread] [@pydoceventloop] [@sobug1] [@sobug2] [@soflaskthread] [@rtdwebsockets] [@sosecwebsock] [@sosecwebsock]
+The method `proxy` is called whenever a new connection to the `ws_proxy` is made. This method first checks the authentication. This is done by splitting the path by a divider and taking the first argument as VMI name and the second as token. This is a useful authentication, because in noVNC we can only specify the path and not for example special headers or other authentication mechanisms. So because of noVNC we are limited to make authentication with this trick. After authentication was successful the method opens a new websocket to the Kubernetes API. There are two ways for this, one is with SSL, where also the self signed certificate is included and the bearer token is attached. And a second way for local development without this. After that every message that is send to the `ws_proxy` within this websocket connection is redirected to the Kubernetes API and the other way around as well. So at this point we have two websocket connections: first client to `ws_proxy` and second `ws_proxy` to Kubernetes. These connections are kept alive and only the messages are redirected. [@ghgwebsocketproxy] [@websocketspy] [@soasynciothread] [@pydoceventloop] [@sobug1] [@sobug2] [@soflaskthread] [@rtdwebsockets] [@sosecwebsock] [@sosecwebsock2]
 
 ~~~{#lst:wsproxyp3 .py .long .numberLines caption="ws_proxy-step3.py part 3" include=prototype/examples/accessing_api/ws_proxy-step3.py startLine=94 startFrom=94 endLine=100}
 ~~~
@@ -238,66 +238,35 @@ After that we can access the VNC in:
 
 ## User Support
 
-https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-https://github.com/miguelgrinberg/REST-auth
-
-`curl -H "Content-Type: application/json" -X POST -d '{"username":"marco","password":"geheim"}' localhost:5000/api/users` [https://stackoverflow.com/questions/7172784/how-do-i-post-json-data-with-curl]
-
-`curl -u marco:geheim localhost:5000/api/resource`
-
-`curl -u marco:geheim localhost:5000/api/token`
-
-```
-{
-  "duration": 600, 
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4MjYyNDE5LjY4NDU3NDR9.lo3MsKr8iQXM0fnd06EmU97vo6iwggx49p3W1FOTaWc"
-}
-```
-
-`curl -u "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4MjYyNDE5LjY4NDU3NDR9.lo3MsKr8iQXM0fnd06EmU97vo6iwggx49p3W1FOTaWc":unused localhost:5000/api/resource`
+In this chapter we will finish the prototype, make a refactoring of the old code and add user support. One feature that is not included is accessing the console but this will be added in the alpha.
 
 
-
-https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/
-https://flask-sqlalchemy.palletsprojects.com/en/2.x/queries/
-https://stackoverflow.com/questions/6750017/how-to-query-database-by-id-using-sqlalchemy
-https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
-https://stackoverflow.com/questions/41222412/sqlalchemy-init-takes-1-positional-argument-but-2-were-given-many-to-man
-https://stackoverflow.com/questions/10434599/get-the-data-received-in-a-flask-request
-https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-https://flask.palletsprojects.com/en/2.0.x/config/
-https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-
-
-Das Ergebnis
-
-During this step we included a refactoring of the old code.
-
+### Refactoring
 
 The KubernetesAPI was refactored and put into its own module called `kubernetes`. Before the refactoring, every Kubernetes API endpoint needed to be added into the KubernetesAPI class. Now you can write extensions and only need to add a class with the api URLs and register the class with an decorator. After the class is registered you can access it in the APIRegistry as a property. For example `APIRegistry(...).namespace` or `APIRegistry(...).virtual_machine_instances`.
 
-~~~{#lst:final_kube_api_1 .py .long .numberLines caption="kubernets/api.py Proxy" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=25 startFrom=25 endLine=58}
+~~~{#lst:final_kube_api_1 .py .long .numberLines caption="kubernetes/api.py Proxy" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=25 startFrom=25 endLine=58}
 ~~~
 
 The KubernetesAPI class is renamed into Proxy. This class sends request to the Kubernetes api and adds required headers and verifies the right certificate.
 
 
-~~~{#lst:final_kube_api_2 .py .long .numberLines caption="kubernets/api.py ApiExtension" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=73 startFrom=73 endLine=106}
+~~~{#lst:final_kube_api_2 .py .long .numberLines caption="kubernetes/api.py ApiExtension" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=73 startFrom=73 endLine=106}
 ~~~
 
 The api has two different types of API endpoints. The ones that only work with namespaces and the other that doesn't have a namespace. For example a namespace is a not namespaced resource and an VMI is a namespaced resource. The difference between these two types is how you build the URL. Every type has an identifier, but namespaced URLs has an namespace too. The ApiExtension class contains the basics for all api extensions and the NamespacedApi and NotNamespacedApi extends this to provide the two types of API endpoints. With this two abstract classes we are able to add any Kubernetes API endpoint to our library. [@k8sdocapi]
 
-~~~{#lst:final_kube_api_3 .py .long .numberLines caption="kubernets/api.py Extensions" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=109 startFrom=109 endLine=124}
+~~~{#lst:final_kube_api_3 .py .long .numberLines caption="kubernetes/api.py Extensions" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=109 startFrom=109 endLine=124}
 ~~~
 
-The [listing kubernets/api.py Extensions](#lst:final_kube_api_3) shows three extensions we have added. One for the namespace resource, one for the VMIs and one for network policies. With this three extensions we are able to create, delete and get any of these resources. The extensions are registered with the decorators `add_api_not_namespaced` and `add_api_namespaced`. Without adding these decorators we are not able to use this extensions.
+The [listing kubernetes/api.py Extensions](#lst:final_kube_api_3) shows three extensions we have added. One for the namespace resource, one for the VMIs and one for network policies. With this three extensions we are able to create, delete and get any of these resources. The extensions are registered with the decorators `add_api_not_namespaced` and `add_api_namespaced`. Without adding these decorators we are not able to use this extensions.
 
-~~~{#lst:final_kube_api_4 .py .long .numberLines caption="kubernets/api.py decorators" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=7 startFrom=7 endLine=22}
+~~~{#lst:final_kube_api_4 .py .long .numberLines caption="kubernetes/api.py decorators" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=7 startFrom=7 endLine=22}
 ~~~
 
 The methods `add_api_namespaced` and `add_api_not_namespaced` return the decorators. Decorators are methods that get a function or class passed as argument. The return value of the decorator will replace the decorated function or class. So with decorators you are able to replace a function or class with another function. We use decorators here to add the passed class to a dictionary. The key of the dictionary is the string passed into the outer function, i.e. `namespace` in the Namespace Extension and network_policy in the NetworkPolicy Extension. The value is a reference to the class. We have two dictionaries here: one for the namespaced extensions and one for the not-namespaced extensions. The decorators return the same as they got passed into so that the function or class will not be replaced.
 
-~~~{#lst:final_kube_api_5 .py .long .numberLines caption="kubernets/api.py APIRegistry" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=61 startFrom=61 endLine=70}
+~~~{#lst:final_kube_api_5 .py .long .numberLines caption="kubernetes/api.py APIRegistry" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/api.py startLine=61 startFrom=61 endLine=70}
 ~~~
 
 The `APIRegistry` can be initialized with an object of the `Proxy`. This class makes use of the magic method `__getattr__`. In python when you call a method or get an attribute of an object, python executes the method `__getattribute__` with the name of the method or attribute as parameter if this method is defined. If `__getattribute__` is not defined python will look if the class has this attribute or method itself. If that is not the case, python will execute the `__getattr__` method if it is defined. With defining one of this methods you can dynamically process attributes. In the `APIRegistry` this is used to add new attributes to the class for every extension class that is in the dictionaries. Every `add_api_namespaced` decorator will add an attribute to this class with an instance of the decorated class. So if you want to create a namespace you can simply call `APIRegistry(...).namespace.create(...)` or if you want to get all VMIs you can call `APIRegistry(...).virtual_machine_instances.get_list(...)`.
@@ -305,14 +274,14 @@ The `APIRegistry` can be initialized with an object of the `Proxy`. This class m
 ~~~{#lst:final_model .py .long .numberLines caption="model.py" include=prototype/examples/user_support/lab_orchestrator_prototype/model.py startLine=6 startFrom=6 endLine=28}
 ~~~
 
-We are using SQLAlchemy as ORM and added some database classes. The first class is `DockerImage`. This class contains a name, a description and a URL. This can be used to add docker images to the lab orchestrator which can later be injected into a VMI template. This makes creating labs easy, because you only need to have the URL to your docker image. The second class is `Lab` which contains a name, a namespace prefix, a description, a reference to a docker image and a name for the docker image. The namespace prefix is used to create namespaces when launching a lab and to separate this from other labs. That's the reason this needs to be unique. If you add a new lab you need to make sure your namespace prefix doesn't include characters that are not allowed in Kubernetes namespaces. The docker image is a reference to the first class and the idea ist that you can use a docker image for many labs if you don't need a custom image. For example you can create many labs that just use the default ubuntu image. The name of the docker image is used as VMI name and when adding new labs you need to make sure this doesn't include characters that are not allowed in Kubernetes VMI names. The third class is `LabInstance`. A lab instance is a lab that was started by a user, tho this class only references the user and the lab. [@sqlalchrela]
+We are using SQLAlchemy as ORM and added some database classes. The first class is `DockerImage`. This class contains a name, a description and a URL. This can be used to add docker images to the lab orchestrator which can later be injected into a VMI template. This makes creating labs easy, because you only need to have the URL to your docker image. The second class is `Lab` which contains a name, a namespace prefix, a description, a reference to a docker image and a name for the docker image. The namespace prefix is used to create namespaces when launching a lab and to separate this from other labs. That's the reason this needs to be unique. If you add a new lab you need to make sure your namespace prefix doesn't include characters that are not allowed in Kubernetes namespaces. The docker image is a reference to the first class and the idea ist that you can use a docker image for many labs if you don't need a custom image. For example you can create many labs that just use the default ubuntu image. The name of the docker image is used as VMI name and when adding new labs you need to make sure this doesn't include characters that are not allowed in Kubernetes VMI names. The third class is `LabInstance`. A lab instance is a lab that was started by a user, tho this class only references the user and the lab. [@sqlalchrela] [@flaskalchemy] [@alchemymodels]
 
 Next we come to the controllers module. The controllers are used to group some services together and provide them in a central interface. They are used in the routes to access objects in the database model and the Kubernetes API. There are two types of main-controllers: `ModelController` and `KubernetesController`. The `KubernetesController` is further divided into two types: `NamespacedController` and `NotNamespacedController` so there is a total of three base classes that will be used.
 
 ~~~{#lst:final_controller_1 .py .long .numberLines caption="kubernetes/controller.py ModelController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=14 startFrom=14 endLine=43}
 ~~~
 
-The `ModelController` is a controller that adds methods for database models. When extending this class you need to implement the methods `_model` and `_serialize`. `_model` needs to return the model class and `_serialize` needs to return a dictionary that can be used to serialize the objects and return them as JSON in the API. When extending this class you are automatically able to get a list of all items in the database table, you can get a specific object by its identifier and you can delete objects. There is also a create method that can be used to create new objects. The last method provided in this base class is `make_response`, which is used in the routes and returns a jsonified version of the object or a list of objects.
+The `ModelController` is a controller that adds methods for database models. When extending this class you need to implement the methods `_model` and `_serialize`. `_model` needs to return the model class and `_serialize` needs to return a dictionary that can be used to serialize the objects and return them as JSON in the API. When extending this class you are automatically able to get a list of all items in the database table, you can get a specific object by its identifier and you can delete objects. There is also a create method that can be used to create new objects. The last method provided in this base class is `make_response`, which is used in the routes and returns a jsonified version of the object or a list of objects. [@flaskalchemy] [@soalchemyget] [@alchemyquery]
 
 ~~~{#lst:final_controller_2 .py .long .numberLines caption="kubernetes/controller.py KubernetesController" include=prototype/examples/user_support/lab_orchestrator_prototype/kubernetes/controller.py startLine=46 startFrom=46 endLine=59}
 ~~~
@@ -371,7 +340,7 @@ The `LabInstanceController` implements the `ModelController` and adds many metho
 
 The `ControllerCollection` doesn't implement any controller base class. This class is only used to have a collection with every controller. An object of this class is used in the routes to get access to the controllers.
 
-The module `routes` contains the API routes. We have removed the old routes and added new routes. The routes are based on the Rest API design. You have the following URLs:
+The module `routes` contains the API routes. We have removed the old routes and added new routes. The routes are based on the Rest API design and are able to read the parameters from the POST body or URL query parameters. [@soflaskdata] [@wikihttpcodes] You have the following URLs:
 
 - `/lab_instance`: GET, POST
     - Users can see their lab instances
@@ -398,39 +367,155 @@ The module `routes` contains the API routes. We have removed the old routes and 
 
 The methods in the routes uses the services in the Controllers in the `ControllerCollection` object and adds permissions. The last method in this module is only needed to load this module. Every route is added to the app with decorators and they are only executed if this module is loaded.
 
-The module `app` contains the flask app, the `SQLAlchemy` database object, the authentication objects, some basic configuration and a singleton class for the `ControllerCollection` object that is used in the routes.
+The module `app` contains the flask app, the `SQLAlchemy` database object, the authentication objects, some basic configuration and a singleton class for the `ControllerCollection` object that is used in the routes. [@flaskconfig]
 
-~~~{#lst:final_ws_proxy_1 .py .long .numberLines caption="kubernetes/ws_proxy.py 1" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=13 startFrom=13 endLine=15}
+~~~{#lst:final_ws_proxy_1 .py .long .numberLines caption="ws_proxy.py 1" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=13 startFrom=13 endLine=15}
 ~~~
 
-~~~{#lst:final_ws_proxy_2 .py .long .numberLines caption="kubernetes/ws_proxy.py 2" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=44 startFrom=44 endLine=65}
+~~~{#lst:final_ws_proxy_2 .py .long .numberLines caption="ws_proxy.py 2" include=prototype/examples/user_support/lab_orchestrator_prototype/ws_proxy.py startLine=44 startFrom=44 endLine=65}
 ~~~
 
 In the `ws_proxy` module we first removed the old authentication methods and replaced it with the JWT token authentication that we have added in the `user_management` module which we will explain in a moment. The `proxy` method has also some changes. The path now contains the id of the lab instance and a JWT token. The id is used to get the lab instance and the lab. This is needed to get the namespace name where the VMI is running and the VMI name. Both are needed to generate the VNC remote URL.
 
-Last part of the refactoring is the `api` module. Here we load the config from environment variables and setup the `Proxy` and `APIRegistry` object and the Controllers. After that the `ws_proxy` and flask app are started.
+Last part of the refactoring is the `api` module. Here we load the config from environment variables and setup the `Proxy` and `APIRegistry` object and the Controllers. After that the `ws_proxy` and flask app are started. [@flaskconfig]
 
-TODO user management
+In addition to this we have added a new start script `run`. To execute it set the necessary environment variables and execute the script with `./run` or `python3 run`.
 
-TODO anleitung um docker image und lab zu createn
+### User Management
 
-TODO quellen
+In this step we have added a user class and authentication methods. To achieve this the [blog of miguel grinberg](https://blog.miguelgrinberg.com/post/restful-authentication-with-flask)^[https://blog.miguelgrinberg.com/post/restful-authentication-with-flask] was used. The full code of miguelgrinbergs example can be found [on github](https://github.com/miguelgrinberg/REST-auth)^[https://github.com/miguelgrinberg/REST-auth] MIT licensed. [@ghrestauth] [@grinbergblog]
 
-Starting a lab and accessing VNC: TODO ordentlich
+~~~{#lst:final_user_mgmt_1 .py .long .numberLines caption="user_management.py 1" include=prototype/examples/user_support/lab_orchestrator_prototype/user_management.py startLine=12 startFrom=12 endLine=38}
+~~~
 
-1. Start a lab instance: `curl -u admin:changeme -X POST -d lab_id=1 localhost:5000/lab_instance`
-2. Show the VMI: `curl -u admin:changeme localhost:5000/lab_instance/1/virtual_machine_instances/`
-3. Get JWT token: `curl -u admin:changeme localhost:5000/api/token`
-4. Show lab instances with token: `curl -u eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4NDM1MzQ2LjUwMzcyMzZ9.BofQxA6gUFCiZfg1oSNp-296jPmg7OdLcWA0HKLrPBI:unused localhost:5000/lab_instance`
-5. Open noVNC: `http://localhost:8000/vnc_lite.html?host=localhost&port=5001&path=1/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4NDM1MzQ2LjUwMzcyMzZ9.BofQxA6gUFCiZfg1oSNp-296jPmg7OdLcWA0HKLrPBI`
+The `User` class add the possibility to save users. Users have an id, an username and password and can be an admin. The `hash_password` method saves the password hashed to the database and the `verify_password` is able to verify this hash. `generate_auth_token` is used to generate a JWT token and `verify_auth_token` is used to verify this token during login.
+
+~~~{#lst:final_user_mgmt_2 .py .long .numberLines caption="user_management.py 2" include=prototype/examples/user_support/lab_orchestrator_prototype/user_management.py startLine=41 startFrom=41 endLine=54}
+~~~
+
+The method `create_admin` checks if the user with the given username is already created. If the user is created its admin status and password will be changed. If the user is not created it will be created with admin status and password.
+
+~~~{#lst:final_user_mgmt_3 .py .long .numberLines caption="user_management.py 3" include=prototype/examples/user_support/lab_orchestrator_prototype/user_management.py startLine=58 startFrom=58 endLine=68}
+~~~
+
+The method `verify_password` is added to the authentication object and used for authentication in flask. The method is able to check two different ways of authentication. One is username and password authentication and the other is token based authentication. This is both used with basic-auth. If you want to login with the token and basic auth, you need to pass the token as username and give a random password. The password is ignored if you use token based authentication. It may be better to use bearer token authentication for token based authentication instead of basic-auth.
+
+After this there are some routes added to the flask app:
+
+- `/api/users`: POST
+    - creates a new user
+- `/api/users/<int:id>`: GET
+    - returns information about a user
+- `/api/token`: GET
+    - Users can generate a JWT token with this method. This is needed for token based authentication and the authentication in the VNC part
+
+## Results
+
+Now we have an API where we can create users and authenticate with two different methods: username/password authentication and token authentication which uses JWT tokens.
+
+**Create User and Authenticate**
+
+Create a user: [@sopostjson]
+
+~~~{#lst:curlcreateuser .bash .long caption="create user with curl"}
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"username": "me", "password": "secret"}' \
+    localhost:5000/api/users
+~~~
+
+Authenticate with username/password:
+
+~~~{#lst:curlbasicauth .bash .long caption="username/password authentication with curl"}
+curl \
+    -u me:secret \
+    localhost:5000/lab_instance
+~~~
+
+Get token:
+
+~~~{#lst:curlgettoken .bash .long caption="get a token with curl"}
+curl \
+    -u me:secret \
+    localhost:5000/api/token
+~~~
+
+The response should look like this:
+
+~~~{#lst:curltokenresposne .json .long caption="JWT token response"}
+{
+  "duration": 600,
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNjI4MjYyNDE5LjY4NDU3NDR9.lo3MsKr8iQXM0fnd06EmU97vo6iwggx49p3W1FOTaWc"
+}
+~~~
+
+Copy the token from the response and authenticate with token:
+
+~~~{#lst:curllogintoken .bash .long caption="token authentication with curl"}
+curl \
+    -u TOKEN:unused \
+    localhost:5000/lab_instance
+~~~
+
+**Add docker images**
+
+There is an admin account that will be created during the startup. Its default username is `admin` and password is `changeme`. You can change this with environment variables. To create a lab and add docker images you need to have admin rights so you need to use this default user.
 
 
+First upload your docker image to docker hub, then add it to the lab orchestrator like this:
 
-[KubeVirt Authorization](https://kubevirt.io/user-guide/operations/authorization/)^[https://kubevirt.io/user-guide/operations/authorization/]
+~~~{#lst:curladddocker .bash .long caption="add a docker image with curl"}
+curl -u \
+    admin:changeme \
+    -X POST \
+    -d name=ubuntu-cloud-gnome \
+    -d description="Ubuntu cloud image with Gnome installed" \
+    -d urls="USERNAME/REPO:VERSION" \
+    localhost:5000/docker_image
+~~~
 
-Because Kubernetes can be accessed through an API, we can wrap all methods in an application and add authorization in a different layer. This will be shown in the prototype.
+**Add lab**
 
-Hier wird nach einer Lösung gesucht, womit es möglich ist mehrere user zu haben und dass ein user nur auf sein lab zugreifen kann.
+First you need to create a docker image and get its id. This can be done with `curl localhost:5000/docker_image`. After that you can create a lab like this:
 
-Hier werden die vnc und ttyd dienste, welche wir nutzen über ingresses oder services nach außen erreichbar gemacht. Für vnc werden wir vermutlich einen proxy bauen müssen oder ähnliches um die k8 api zu wrappen.
+~~~{#lst:curlcreatelab .bash .long caption="create lab with curl"}
+curl \
+    -u admin:changeme \
+    -X POST \
+    -d name="Lab Ubuntu Hacking" \
+    -d namespace_prefix="lab-ubuntu-hacking" \
+    -d description="How to hack ubuntu" \
+    -d docker_image_id=1 \
+    -d docker_image_name="ubuntu-cloud-gnome" \
+    localhost:5000/lab
+~~~
 
+**Start a lab**
+
+Start a lab instance:
+
+~~~{#lst:curlstartlab .bash .long caption="start a lab instance with curl"}
+curl \
+    -u me:secret \
+    -X POST \
+    -d lab_id=1 \
+    localhost:5000/lab_instance
+~~~
+
+Show the VMIs:
+
+~~~{#lst:curlgetvmi .bash .long caption="list the VMIs with curl"}
+curl \
+    -u me:secret \
+    localhost:5000/lab_instance/1/virtual_machine_instances/
+~~~
+
+Open noVNC
+
+~~~{#lst:novncurlfinal .long caption="final URL for noVNC"}
+http://localhost:8000/vnc_lite.html
+    ?host=localhost
+    &port=5001
+    &path=LAB_INSTANCE_ID/TOKEN
+~~~

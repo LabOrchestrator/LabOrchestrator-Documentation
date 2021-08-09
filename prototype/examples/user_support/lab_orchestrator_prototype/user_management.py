@@ -44,10 +44,11 @@ def create_admin(username, password):
         if user.admin:
             return user
         user.admin = True
+        user.hash_password(password)
         db.session.add(user)
         db.session.commit()
         return user
-    user = User(username=username)
+    user = User(username=username, admin=True)
     user.hash_password(password)
     db.session.add(user)
     db.session.commit()
@@ -97,14 +98,3 @@ def get_auth_token():
     token = g.user.generate_auth_token(600)
     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
-
-@app.route('/api/resource')
-@auth.login_required
-def get_resource():
-    return jsonify({'data': 'Hello, %s!' % g.user.username})
-
-
-if __name__ == '__main__':
-    if not os.path.exists('db.sqlite'):
-        db.create_all()
-    app.run(debug=True)
