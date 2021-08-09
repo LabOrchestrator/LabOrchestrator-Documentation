@@ -9,6 +9,7 @@ The %project_name% application uses different tools that may be explained before
 The documentation is written in markdown and converted to a pdf using pandoc. To generate the documentation pandoc and latex are used.
 
 Installation: [@markdownandpandoc]
+
 - [Download pandoc version 2.14.1 from git](https://github.com/jgm/pandoc/releases/tag/2.14.1)^[https://github.com/jgm/pandoc/releases/tag/2.14.1] and install it
 - [Download pandoc-crossref](https://github.com/lierdakil/pandoc-crossref/releases)^[https://github.com/lierdakil/pandoc-crossref/releases] (v0.3.12.0b), extract the tar and copy the binary to `~/.local/bin` with the command `install pandoc-crossref`
 - [Build and install pandoc-include-code](https://github.com/owickstrom/pandoc-include-code#build)^[https://github.com/owickstrom/pandoc-include-code#build] (version 1.5.0.0) and extend you `$PATH` with `~/.cabal/bin`
