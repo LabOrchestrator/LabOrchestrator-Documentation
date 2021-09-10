@@ -1,0 +1,17 @@
+Packaging tutorial:
+https://packaging.python.org/tutorials/packaging-projects/
+
+.pypirc file reference:
+https://packaging.python.org/specifications/pypirc/
+
+package static files:
+https://stackoverflow.com/questions/11848030/how-include-static-files-to-setuptools-python-package/11848281#11848281
+
+package static files:
+https://stackoverflow.com/questions/6028000/how-to-read-a-static-file-from-inside-a-python-package
+
+create empty venv:
+https://stackoverflow.com/questions/58000371/how-to-create-an-empty-python-virtual-environment
+
+vorlage:
+https://github.com/robotframework/SeleniumLibrary/
