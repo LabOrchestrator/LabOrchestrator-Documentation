@@ -15,3 +15,11 @@ https://stackoverflow.com/questions/58000371/how-to-create-an-empty-python-virtu
 
 vorlage:
 https://github.com/robotframework/SeleniumLibrary/
+
+
+nach dem ws proxy port:
+kubectl proxy (port 8001)
+docker run -e SECRET_KEY=secret -e KUBERNETES_SERVICE_HOST=localhost -e KUBERNETES_SERVICE_PORT=8001 -e LOCAL_DEV_MODE=True -p 5001:5001 --network host wsproxy
+SimpleHTTPServer auf port 8002 starten: python -m SimpleHTTPServer 8002
+DjangoAdapter laufen lassen und vmi starten. token daraus nehmen. (port 8000)
+http://localhost:8002/vnc_lite.html?host=localhost&port=5001&path=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6NSwiZXhwIjoxNjMxMzExMjkwLjU5NTU3MTgsImxhYl9pbnN0YW5jZSI6eyJsYWJfaWQiOjEsImxhYl9pbnN0YW5jZV9pZCI6OSwibmFtZXNwYWNlX25hbWUiOiJwZW50ZXN0LXVidW50dS0zLTkiLCJhbGxvd2VkX3ZtaV9uYW1lcyI6WyJ1YnVudHUiXX19.f_dh-fqZz2a-VzfdtYixOLldbGgxAuNAwYjwDgxDKAM/ubuntu
