@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from typing import Dict, Type, Callable, Union
+from typing import Dict, Type, Callable, Union, Optional
 
 import requests
 
@@ -63,6 +63,7 @@ class APIRegistry:
         self.proxy = proxy
 
     def __getattr__(self, name) -> Union['NamespacedApi', 'NotNamespacedApi']:
+        cls: Union[Optional[Type['NamespacedApi']], Optional[Type['NotNamespacedApi']]]
         if cls := API_EXTENSIONS_NAMESPACED.get(name):
             return cls(self.proxy)
         if cls := API_EXTENSIONS_NOT_NAMESPACED.get(name):
