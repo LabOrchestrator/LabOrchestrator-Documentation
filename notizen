@@ -23,3 +23,25 @@ docker run -e SECRET_KEY=secret -e KUBERNETES_SERVICE_HOST=localhost -e KUBERNET
 SimpleHTTPServer auf port 8002 starten: python -m SimpleHTTPServer 8002
 DjangoAdapter laufen lassen und vmi starten. token daraus nehmen. (port 8000)
 http://localhost:8002/vnc_lite.html?host=localhost&port=5001&path=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6NSwiZXhwIjoxNjMxMzExMjkwLjU5NTU3MTgsImxhYl9pbnN0YW5jZSI6eyJsYWJfaWQiOjEsImxhYl9pbnN0YW5jZV9pZCI6OSwibmFtZXNwYWNlX25hbWUiOiJwZW50ZXN0LXVidW50dS0zLTkiLCJhbGxvd2VkX3ZtaV9uYW1lcyI6WyJ1YnVudHUiXX19.f_dh-fqZz2a-VzfdtYixOLldbGgxAuNAwYjwDgxDKAM/ubuntu
+
+
+
+put minikube on server
+kubectl remote config
+https://www.zepworks.com/posts/access-minikube-remotely-kvm/#2-run-minikube-with-explicit-apiserver-ip-on-the-host
+
+
+add environment variables to kubernetes yaml config:
+https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+
+kustomize
+https://levelup.gitconnected.com/kubernetes-change-base-yaml-config-for-different-environments-prod-test-6224bfb6cdd6
+
+postgres deploy:
+https://severalnines.com/database-blog/using-kubernetes-deploy-postgresql
+
+postgres stateful:
+https://www.bmc.com/blogs/kubernetes-postgresql/
+
+init containers:
+https://www.alibabacloud.com/blog/kubernetes-demystified%3A-solving-service-dependencies_594110
