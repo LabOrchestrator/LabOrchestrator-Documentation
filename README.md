@@ -7,3 +7,51 @@
 
 This is the project documentation. It contains an installation guide but also a full project description and the documentation about the prototype and some development steps. It's a big guide, but it should contain everything that needs to be documented.
 
+## Orchestrator and research goals
+
+- [x] Kubernetes und KubeVirt installieren, Kubernetes Templates und Base Images anschauen, KubeVirt Base VMs in Kuberetes starten und stoppen (1 Woche)
+- [x] Evaluation Web-Terminal Tools (0.5 – 1 Woche)
+- [x] Evaluation Web-VNC Tools (0.5 – 1 Woche)
+- [ ] Docker Base Images mit Web-Terminal Tool (0.5 Wochen)
+- [x] VM Base Image mit Web-VNC Tool (0.5 – 1 Woche)
+- [x] Kubernetes Template mit vorherigen Base Images bereitstellen und testen (1 Woche)
+- [x] Evaluation einer Routing Lösung (1 Woche, Worst Case 2 Wochen)
+- [x] Kubernetes Usergebundenes Routing mit Autorisierung (1 Woche)
+
+## Library goals
+
+- [x] Library: Lernmodul starten und stoppen (1 – 2 Wochen)
+- [x] Library: Routing und Autorisierung im Proxy automatisch konfigurieren (1 Woche)
+- [x] Library: Lernmodule hinzufügen und entfernen (1 Wochen)
+- [x] Library: Anleitung hinzufügen (0.5 Wochen)
+- [ ] Library: Features der Anleitungen hinzufügen (1 – 2 Wochen)
+
+
+- [x] Lernmodule starten und stoppen (muss)
+- [ ] Lernmodule pausieren und fortfahren (kann)
+- [x] Lernmodule hinzufügen und entfernen (muss)
+- [x] Routing für Lernmodule konfigurieren (muss)
+- [x] Beim Routing eine Authentification-Möglichkeit hinzufügen (muss)
+- [ ] Authentification-Details für Lernmodule anzeigen (muss)
+- [ ] User und ihre Lernmodule verknüpfen (muss)
+- [x] Anleitungen hinzufügen (muss)
+- [x] Lernmodule und Anleitungen verknüpfen (muss)
+
+## Instruction goals
+
+- [ ] Markdown oder HTML Syntax (kann)
+- [x] Seiten mit Text (muss)
+- [x] Controller zur Auswahl der VM (muss)
+- [ ] Schritte pro Seite (kann)
+- [ ] Schritte abhaken (kann)
+- [ ] Fortschrittsbar zu abgehakten Schritten (kann)
+- [ ] Bilder und andere Medien einbinden (kann)
+- [ ] Wissenstexte darstellen (muss)
+- [ ] Interaktion mit VMs, beispielsweise Texte in das Clipboard der VM kopieren (kann)
+- [ ] Variablen (kann)
+
+
+## API goals
+
+- [x] Webschnittstelle: User- und Permission-Management (1 Woche)
+- [ ] Abbilden aller Library Funktionalitäten als REST-Schnittstelle und in Datenbankmodellen
