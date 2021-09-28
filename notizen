@@ -45,3 +45,22 @@ https://www.bmc.com/blogs/kubernetes-postgresql/
 
 init containers:
 https://www.alibabacloud.com/blog/kubernetes-demystified%3A-solving-service-dependencies_594110
+https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+
+minikube reverse proxy:
+https://www.nginx.com/blog/websocket-nginx/
+https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/
+https://serverfault.com/questions/562756/how-to-remove-the-path-with-an-nginx-proxy-pass
+- probleme mit docker networks
+- deshalb driver=docker
+- TODO: prüfen ob ich vms starten kann
+
+https://kube.bergiu.cyou/labvnc/vnc_lite.html
+
+swagger ui openapi:
+https://dev.to/errietta/documenting-a-django-api-with-openapi-and-dataclasses-1p6h
+https://www.django-rest-framework.org/topics/documenting-your-api/
+
+during swagger ui i added templates
+templates:
+https://stackoverflow.com/questions/15411164/django-templates-folders

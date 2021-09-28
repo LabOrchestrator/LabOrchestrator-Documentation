@@ -24,7 +24,7 @@ This is the project documentation. It contains an installation guide but also a 
 - [x] Library: Routing und Autorisierung im Proxy automatisch konfigurieren (1 Woche)
 - [x] Library: Lernmodule hinzufügen und entfernen (1 Wochen)
 - [x] Library: Anleitung hinzufügen (0.5 Wochen)
-- [ ] Library: Features der Anleitungen hinzufügen (1 – 2 Wochen)
+- [x] Library: Features der Anleitungen hinzufügen (1 – 2 Wochen)
 
 
 - [x] Lernmodule starten und stoppen (muss)
@@ -32,21 +32,21 @@ This is the project documentation. It contains an installation guide but also a 
 - [x] Lernmodule hinzufügen und entfernen (muss)
 - [x] Routing für Lernmodule konfigurieren (muss)
 - [x] Beim Routing eine Authentification-Möglichkeit hinzufügen (muss)
-- [ ] Authentification-Details für Lernmodule anzeigen (muss)
-- [ ] User und ihre Lernmodule verknüpfen (muss)
+- [x] Authentification-Details für Lernmodule anzeigen (muss)
+- [x] User und ihre Lernmodule verknüpfen (muss)
 - [x] Anleitungen hinzufügen (muss)
 - [x] Lernmodule und Anleitungen verknüpfen (muss)
 
 ## Instruction goals
 
-- [ ] Markdown oder HTML Syntax (kann)
+- [x] Markdown oder HTML Syntax (kann)
 - [x] Seiten mit Text (muss)
 - [x] Controller zur Auswahl der VM (muss)
-- [ ] Schritte pro Seite (kann)
+- [x] Schritte pro Seite (kann)
 - [ ] Schritte abhaken (kann)
 - [ ] Fortschrittsbar zu abgehakten Schritten (kann)
-- [ ] Bilder und andere Medien einbinden (kann)
-- [ ] Wissenstexte darstellen (muss)
+- [x] Bilder und andere Medien einbinden (kann)
+- [x] Wissenstexte darstellen (muss)
 - [ ] Interaktion mit VMs, beispielsweise Texte in das Clipboard der VM kopieren (kann)
 - [ ] Variablen (kann)
 
@@ -54,4 +54,4 @@ This is the project documentation. It contains an installation guide but also a 
 ## API goals
 
 - [x] Webschnittstelle: User- und Permission-Management (1 Woche)
-- [ ] Abbilden aller Library Funktionalitäten als REST-Schnittstelle und in Datenbankmodellen
+- [x] Abbilden aller Library Funktionalitäten als REST-Schnittstelle und in Datenbankmodellen
