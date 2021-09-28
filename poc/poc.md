@@ -722,9 +722,11 @@ Multi-user support means that a user is only able to get access to its own labs.
 
 These three parts may include Kubernetes resources, e.g. the routing can make use of Kubernetes ingresses. But it doesn't need to and can all be included in the application so it will not be part of the proof of concept but from the prototype.
 
-## Docker TODO
+## Docker
 
 Because everything we want to achieve can already be done with VMs this step is just a bonus so that you can choose what you want to use.
+
+This chapter will be added in later releases.
 
 ### Docker Basics
 
@@ -736,20 +738,3 @@ Because everything we want to achieve can already be done with VMs this step is 
 
 ### Separation of labs and authorization
 
-Separation of labs works the same as with KubeVirt, because we use Kubernetes features for this. To check this start two docker images in different namespaces and create the same network policies as before. Then connect into one docker container and ping the other. If this doesn't work everything is fine.
-
-Authorization was also just Kubernetes features and we don't need to change something for docker.
-
-## Conclusion TODO
-
-### Web access to terminal
-
-For VMs we have two solutions to access the terminal: ttyd inside a VM and ttyd outside a VM. The first one ...
-
-### Web access to graphical user interface
-
-### Separation of labs, authorization and routing
-
-The separation of labs is done with network policies. We use one namespace for every lab and in this namespace a NetworkPolicy is created that isolates the VMIs and docker containers in this namespace from other namespaces.
-
-TODO

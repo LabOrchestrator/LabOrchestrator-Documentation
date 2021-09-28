@@ -4,6 +4,7 @@ doc_files=common/config.md \
 		  installation/installation.md \
 		  poc/poc.md \
 		  prototype/prototype.md \
+		  other/other.md \
 		  common/post.md
 
 pandoc_filters=--lua-filter=common/meta-vars.lua --filter pandoc-include-code --filter pandoc-crossref --citeproc
