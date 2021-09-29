@@ -147,7 +147,7 @@ We need to make a frontend that integrates the API, LabVNC and instructions. The
 
 Some parts are missing the documentation right now for example the LabOrchestrator-DjangoAdapter and the developer documentation in the LabOrchestratorLib. This needs to be added. The most important parts have already have unittests but not all parts. This is also something I need to add in the future to improve the software quality.
 
-Currently VMs aren't stopped automatically, so if someone forgets to stop its VM it will run forever. This should also be changed and hopefully can be combined with pausing a VM.
+Currently VMs aren't stopped automatically, so if someone forgets to stop its VM it will run forever. This should also be changed and hopefully can be combined with pausing a VM. Also resuming VMs may be helpful to improve the startup of VMs.
 
 \pagebreak
 
