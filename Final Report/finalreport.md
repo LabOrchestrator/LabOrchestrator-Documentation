@@ -149,6 +149,8 @@ Some parts are missing the documentation right now for example the LabOrchestrat
 
 Currently VMs aren't stopped automatically, so if someone forgets to stop its VM it will run forever. This should also be changed and hopefully can be combined with pausing a VM. Also resuming VMs may be helpful to improve the startup of VMs.
 
+At the moment a token is only valid for 10 minutes. This should be increased or made configurable. When you try out the software, take in mind, that you can refresh the token at `/api/lab_instances/<lab_instance_id>/token`.
+
 \pagebreak
 
 ## Appendix
